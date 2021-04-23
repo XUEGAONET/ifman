@@ -1,13 +1,18 @@
+# 测试用配置文件
+#   仅供参考
+#   需要结合实际需要修改
+#   详细解释请参见config.sample.yaml文件
+
 logger:
-  mode: single # stdout/single/rotate
-  level: trace # trace/debug/info/[warning|warn]/error
-  single: # single mode
+  mode: stdout
+  level: trace
+  single:
     path: /tmp/ifman.log
     perm: 0644
-  rotate: # rotate mode
+  rotate:
     dir: /tmp
-    age: 1296000 # in sec
-    cut_period: 86400 # in sec
+    age: 1296000
+    cut_period: 86400
 
 interface:
   - name: tvrf01
@@ -81,4 +86,4 @@ route:
     table_id: 200
 
 verify:
-  check_period: 10 # in second
+  check_period: 10
