@@ -1,0 +1,67 @@
+package wireguard
+
+import (
+	"github.com/vishvananda/netlink"
+	"golang.zx2c4.com/wireguard/wgctrl"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"net"
+)
+
+func New(wg *WireGuard) error {
+	err := wg.check()
+	if err != nil {
+		return err
+	}
+
+	attr := typWg{
+		LinkAttrs: netlink.LinkAttrs{
+			MTU:         wg.mtu,
+			TxQLen:      wg.txQueueLen,
+			Name:        wg.name,
+			MasterIndex: wg.masterId,
+		},
+	}
+
+	err = netlink.LinkAdd(&attr)
+	if err != nil {
+		return err
+	}
+
+	cli, err := wgctrl.New()
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	_, allow, err := net.ParseCIDR("0.0.0.0/0")
+	if err != nil {
+		return err
+	}
+
+	wgPeer := wgtypes.PeerConfig{
+		PublicKey:                   wgtypes.Key{},
+		Remove:                      false,
+		UpdateOnly:                  false,
+		PresharedKey:                &wgtypes.Key{},
+		Endpoint:                    wg.endpoint,
+		PersistentKeepaliveInterval: wg.hsInterval,
+		ReplaceAllowedIPs:           true,
+		AllowedIPs:                  []net.IPNet{*allow},
+	}
+	copy(wgPeer.PresharedKey[:], wg.key)
+
+	wgConf := wgtypes.Config{
+		PrivateKey:   nil,
+		ListenPort:   nil,
+		FirewallMark: nil,
+		ReplacePeers: true,
+		Peers:        []wgtypes.PeerConfig{wgPeer},
+	}
+
+	if wg.listenPort != 0 {
+		wgConf.ListenPort = &wg.listenPort
+	}
+
+	err = cli.ConfigureDevice(wg.name, wgConf)
+	return err
+}
