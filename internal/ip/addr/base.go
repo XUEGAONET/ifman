@@ -21,12 +21,13 @@ func (a *Address) SetName(s string) error {
 }
 
 func (a *Address) SetAddr(addr string) error {
-	_, ip, err := net.ParseCIDR(addr)
+	ip, network, err := net.ParseCIDR(addr)
 	if err != nil {
 		return fmt.Errorf("parse cidr %s failed: %v", addr, err)
 	}
+	network.IP = ip
 
-	a.addr = *ip
+	a.addr = *network
 	return nil
 }
 

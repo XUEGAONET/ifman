@@ -17,6 +17,8 @@ func afInterface(c Interface) error {
 		err = afVrf(c)
 	case "vxlan":
 		err = afVxLan(c)
+	case "wireguard":
+		err = afWireGuard(c)
 	default:
 		return fmt.Errorf("invalid afInterface type")
 	}

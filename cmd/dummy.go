@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"ifman/internal/inf/dummy"
 	"ifman/internal/inf/exist"
 )
@@ -40,14 +41,18 @@ func afDummy(c Interface) error {
 		}
 
 		if dummy.Equal(getInf, inf) {
+			logrus.Tracef("dummy interface %s check passed", c.Name)
 			return nil
 		} else {
+			logrus.Debugf("dummy interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
 			err = dummy.Update(inf)
 			if err != nil {
 				return err
 			}
 		}
 	} else { // not existed
+		logrus.Infof("dummy interface %s not exists", c.Name)
+
 		err := dummy.New(inf)
 		if err != nil {
 			return err

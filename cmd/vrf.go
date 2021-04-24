@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"ifman/internal/inf/exist"
 	"ifman/internal/inf/vrf"
 )
@@ -28,14 +29,18 @@ func afVrf(c Interface) error {
 		}
 
 		if vrf.Equal(getInf, inf) {
+			logrus.Tracef("vrf interface %s check passed", c.Name)
 			return nil
 		} else {
+			logrus.Debugf("vrf interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
 			err = vrf.Update(inf)
 			if err != nil {
 				return err
 			}
 		}
 	} else { // not existed
+		logrus.Infof("vrf interface %s not exists", c.Name)
+
 		err := vrf.New(inf)
 		if err != nil {
 			return err

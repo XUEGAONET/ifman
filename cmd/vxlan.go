@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"ifman/internal/inf/exist"
 	"ifman/internal/inf/vxlan"
 )
@@ -80,14 +81,18 @@ func afVxLan(c Interface) error {
 		}
 
 		if vxlan.Equal(getInf, inf) {
+			logrus.Tracef("vxlan interface %s check passed", c.Name)
 			return nil
 		} else {
+			logrus.Debugf("vxlan interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
 			err = vxlan.Update(inf)
 			if err != nil {
 				return err
 			}
 		}
 	} else { // not existed
+		logrus.Infof("vxlan interface %s not exists", c.Name)
+
 		err := vxlan.New(inf)
 		if err != nil {
 			return err

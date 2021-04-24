@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"ifman/internal/inf/exist"
 	"ifman/internal/inf/generic"
 )
@@ -41,14 +42,17 @@ func afGeneric(c Interface) error {
 		}
 
 		if generic.Equal(getInf, inf) {
+			logrus.Tracef("generic interface %s check passed", c.Name)
 			return nil
 		} else {
+			logrus.Debugf("generic interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
 			err = generic.Update(inf)
 			if err != nil {
 				return err
 			}
 		}
 	} else { // not exist
+		logrus.Infof("generic interface %s not exists", c.Name)
 		return fmt.Errorf("generic interface %s not exists", c.Name)
 	}
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"ifman/internal/inf/exist"
 	"ifman/internal/inf/tun"
 )
@@ -48,14 +49,18 @@ func afTun(c Interface) error {
 		}
 
 		if tun.Equal(getInf, inf) {
+			logrus.Tracef("tun interface %s check passed", c.Name)
 			return nil
 		} else {
+			logrus.Debugf("tun interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
 			err = tun.Update(inf)
 			if err != nil {
 				return err
 			}
 		}
 	} else { // not existed
+		logrus.Infof("tun interface %s not exists", c.Name)
+
 		err := tun.New(inf)
 		if err != nil {
 			return err

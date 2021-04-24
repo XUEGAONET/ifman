@@ -25,7 +25,7 @@ interface:
     status: up
 
     # interface type
-    #   value: generic | dummy | vrf | tun | vxlan
+    #   value: generic | dummy | vrf | tun | vxlan | wireguard
     type: generic
 
     # interface config
@@ -67,6 +67,21 @@ interface:
 #      src_port_low: 10240 # 0 - 65535
 #      src_port_high: 20480 # 0 - 65535
 #      dst_port: 4789 # 0 - 65535
+
+#      # wireguard server
+#      mtu: 1400
+#      tx_queue_len: 4096
+#      master: ""
+#      key: abcdefg # not allow blank
+#      listen_port: 9999 # 0 - 65535
+
+#      # wireguard client
+#      mtu: 1400
+#      tx_queue_len: 4096
+#      master: ""
+#      key: abcdefg # not allow blank
+#      endpoint: 1.1.1.1:4444 # udp address with port
+#      handshake: 3 # in sec, used for wireguard handshake timer
 
     # offload config
     tso: true
