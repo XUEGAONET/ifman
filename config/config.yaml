@@ -1,8 +1,3 @@
-# 测试用配置文件
-#   仅供参考
-#   需要结合实际需要修改
-#   详细解释请参见config.sample.yaml文件
-
 logger:
   mode: stdout
   level: trace
@@ -15,29 +10,41 @@ logger:
     cut_period: 86400
 
 interface:
-  - name: tvrf01
-    description: VRF
+  - name: vxlan
+    description: vxlan
     status: up
-    type: vrf
+    type: vxlan
     config:
-     table_id: 200
-     mac: 94:94:26:ff:00:01
+      mtu: 1400
+      tx_queue_len: 4096
+      mac: 94:94:26:ff:00:02
+      master: ""
+      vni: 100
+      src:
+      dst: 100.101.16.223
+      ttl: 4
+      tos: 7
+      learning: false
+      src_port_low: 10240
+      src_port_high: 40960
+      dst_port: 4789
     tso: false
     lro: false
     gso: false
     gro: false
     rp_filter: off
     address:
+      - 10.11.1.1/30
 
-  - name: tdummy01
-    description: Dummy01
+  - name: dummy
+    description: dummy
     status: up
     type: dummy
     config:
-     mtu: 1300
-     tx_queue_len: 4096
-     mac: 94:94:26:ff:00:02
-     master: tvrf01
+      mtu: 1200
+      tx_queue_len: 4096
+      mac: 94:94:26:ff:DD:01
+      master: ""
     tso: false
     lro: false
     gso: false
@@ -46,44 +53,8 @@ interface:
     address:
       - 10.10.1.1/32
 
-  - name: ttun01
-    description: Tun01
-    status: up
-    type: tun
-    config:
-     mtu: 1400
-     tx_queue_len: 512
-     master: tvrf01
-     multi_queue: true
-     persist: true
-    tso: false
-    lro: false
-    gso: false
-    gro: false
-    rp_filter: off
-    address:
-      - 10.10.2.1/30
-
-  - name: virbr0
-    description: virbr0
-    status: up
-    type: generic
-    config:
-      mtu: 1500
-      master: tvrf01
-      tx_queue_len: 4096
-      mac: 52:54:00:d3:9d:39
-    tso: false
-    lro: false
-    gso: false
-    gro: false
-    rp_filter: off
-    address:
-
 route:
-  - dst: 8.8.8.8/32
-    gw: 10.10.2.2
-    table_id: 200
 
 verify:
-  check_period: 10
+  check_period: 60
+

@@ -1,9 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/sirupsen/logrus"
+)
 
 func afInterface(c Interface) error {
 	var err error
+	logrus.Tracef("afInterface dump config: %#v", c)
 
 	// create or update interface
 	switch c.Type {

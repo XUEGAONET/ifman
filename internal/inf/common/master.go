@@ -3,6 +3,10 @@ package common
 import "github.com/vishvananda/netlink"
 
 func PassMaster(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+
 	link, err := netlink.LinkByName(s)
 	if err != nil {
 		return 0, err
