@@ -27,8 +27,14 @@ func afWireGuard(c Interface) error {
 			return err
 		}
 	}
-	if v, ok := c.Config["key"]; ok {
-		err := inf.SetKey(keyHash(v.(string)))
+	if v, ok := c.Config["private"]; ok {
+		err := inf.SetPrivate(v.(string))
+		if err != nil {
+			return err
+		}
+	}
+	if v, ok := c.Config["peer_public"]; ok {
+		err := inf.SetPublic(v.(string))
 		if err != nil {
 			return err
 		}

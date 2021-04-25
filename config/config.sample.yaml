@@ -72,16 +72,18 @@ interface:
 #      mtu: 1400
 #      tx_queue_len: 4096
 #      master: ""
-#      key: abcdefg # not allow blank
 #      listen_port: 9999 # 0 - 65535
+#      private: "yOkvmylKT4LN2o601MiVntwFMWB5bSD9GOCotoyo81I="
+#      peer_public: "V628GeW8NyDsqPS1EonOxeLDhPzRikJ4wbcvRhXErho="
 
 #      # wireguard client
 #      mtu: 1400
 #      tx_queue_len: 4096
 #      master: ""
-#      key: abcdefg # not allow blank
 #      endpoint: 1.1.1.1:4444 # udp address with port
 #      handshake: 3 # in sec, used for wireguard handshake timer
+#      private: "yOkvmylKT4LN2o601MiVntwFMWB5bSD9GOCotoyo81I="
+#      peer_public: "V628GeW8NyDsqPS1EonOxeLDhPzRikJ4wbcvRhXErho="
 
     # offload config
     tso: true
