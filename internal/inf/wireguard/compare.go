@@ -1,5 +1,7 @@
 package wireguard
 
+import "golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
 func Equal(a, b *WireGuard) bool {
 	if a.mtu != b.mtu {
 		return false
@@ -31,10 +33,38 @@ func Equal(a, b *WireGuard) bool {
 		if *a.hsInterval != *b.hsInterval {
 			return false
 		}
+
+		if !keyEqual(a.peerPublic, b.peerPublic) {
+			return false
+		}
 	}
 
-	if string(a.key) != string(b.key) {
+	if !keyEqual(a.private, b.private) {
 		return false
+	}
+
+	return true
+}
+
+func keyEqual(a, b *wgtypes.Key) bool {
+	if (a != nil && b == nil) || (a == nil || b != nil) {
+		return false
+	}
+
+	if a != nil { // both are not nil key
+		if !compareKey(*a, *b) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func compareKey(a, b wgtypes.Key) bool {
+	for i := 0; i < 32; i++ {
+		if a[i] != b[i] {
+			return false
+		}
 	}
 
 	return true

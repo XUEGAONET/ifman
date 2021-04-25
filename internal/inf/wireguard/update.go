@@ -45,19 +45,18 @@ func Update(wg *WireGuard) error {
 	}
 
 	wgPeer := wgtypes.PeerConfig{
-		PublicKey:                   wgtypes.Key{},
+		PublicKey:                   *wg.peerPublic,
 		Remove:                      false,
 		UpdateOnly:                  false,
-		PresharedKey:                &wgtypes.Key{},
+		PresharedKey:                nil,
 		Endpoint:                    wg.endpoint,
 		PersistentKeepaliveInterval: wg.hsInterval,
 		ReplaceAllowedIPs:           true,
 		AllowedIPs:                  []net.IPNet{*allow},
 	}
-	copy(wgPeer.PresharedKey[:], wg.key)
 
 	wgConf := wgtypes.Config{
-		PrivateKey:   nil,
+		PrivateKey:   wg.private,
 		ListenPort:   nil,
 		FirewallMark: nil,
 		ReplacePeers: true,

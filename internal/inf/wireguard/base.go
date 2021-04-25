@@ -1,8 +1,10 @@
 package wireguard
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/vishvananda/netlink"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"ifman/internal/inf/common"
 	"net"
 	"time"
@@ -26,9 +28,42 @@ type WireGuard struct {
 	txQueueLen int
 	masterId   int
 	listenPort int
-	key        []byte
 	endpoint   *net.UDPAddr
 	hsInterval *time.Duration
+	private    *wgtypes.Key
+	peerPublic *wgtypes.Key
+}
+
+func (w *WireGuard) SetPrivate(s string) error {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+
+	if len(b) != 32 {
+		return fmt.Errorf("invalid private key length after decoding")
+	}
+
+	var t wgtypes.Key
+	copy(t[:], b)
+	w.private = &t
+	return nil
+}
+
+func (w *WireGuard) SetPublic(s string) error {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return err
+	}
+
+	if len(b) != 32 {
+		return fmt.Errorf("invalid peerPublic key length after decoding")
+	}
+
+	var t wgtypes.Key
+	copy(t[:], b)
+	w.peerPublic = &t
+	return nil
 }
 
 func (w *WireGuard) SetName(s string) error {
@@ -72,17 +107,6 @@ func (w *WireGuard) SetListenPort(u uint16) error {
 	return nil
 }
 
-func (w *WireGuard) SetKey(k []byte) error {
-	if len(k) != 32 {
-		return fmt.Errorf("invalid key")
-	}
-
-	t := make([]byte, 32)
-	copy(t, k)
-	w.key = t
-	return nil
-}
-
 func (w *WireGuard) SetEndpoint(s string) error {
 	addr, err := net.ResolveUDPAddr("udp", s)
 	if err != nil {
@@ -99,7 +123,7 @@ func (w *WireGuard) SetHandshakeIntervalSec(u uint16) {
 }
 
 func (w *WireGuard) check() error {
-	if w.name == "" || w.key == nil ||
+	if w.name == "" || w.private == nil || w.peerPublic == nil ||
 		(w.hsInterval != nil && w.listenPort != 0 && w.endpoint != nil) {
 		return fmt.Errorf("invalid parameter")
 	}
@@ -113,8 +137,9 @@ func GetAttr() *WireGuard {
 		txQueueLen: 0,
 		masterId:   0,
 		listenPort: 0,
-		key:        nil,
 		endpoint:   nil,
 		hsInterval: nil,
+		private:    nil,
+		peerPublic: nil,
 	}
 }

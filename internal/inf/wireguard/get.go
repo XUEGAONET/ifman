@@ -36,8 +36,10 @@ func Get(name string) (*WireGuard, error) {
 	}
 
 	res.listenPort = dev.ListenPort
+	res.private = &dev.PrivateKey
+
 	if len(dev.Peers) == 0 {
-		return nil, fmt.Errorf("no peer under wg interface")
+		return res, nil
 	}
 	if len(dev.Peers) > 1 {
 		logrus.WithField("module", "wireguard").
@@ -45,10 +47,7 @@ func Get(name string) (*WireGuard, error) {
 	}
 	res.endpoint = dev.Peers[0].Endpoint
 	res.hsInterval = &dev.Peers[0].PersistentKeepaliveInterval
-
-	t := make([]byte, 32)
-	copy(t, dev.Peers[0].PresharedKey[:])
-	res.key = t
+	res.peerPublic = &dev.Peers[0].PublicKey
 
 	return res, nil
 }
