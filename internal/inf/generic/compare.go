@@ -1,22 +1,28 @@
 package generic
 
-func Equal(a, b *Generic) bool {
-	if a.mtu != b.mtu {
-		return false
+func Equal(expect, get *Generic) bool {
+	if expect.mac != nil {
+		if expect.mac.String() != get.mac.String() {
+			return false
+		}
 	}
 
-	if a.mac.String() != b.mac.String() {
-		return false
+	if expect.mtu != 0 {
+		if expect.mtu != get.mtu {
+			return false
+		}
 	}
 
-	// TODO:
-	//   not all the interface can be set
-	if a.txQueueLen != b.txQueueLen {
-		return false
+	if expect.txQueueLen != 0 {
+		if expect.txQueueLen != get.txQueueLen {
+			return false
+		}
 	}
 
-	if a.masterId != b.masterId {
-		return false
+	if expect.masterId != 0 {
+		if expect.masterId != get.masterId {
+			return false
+		}
 	}
 
 	return true

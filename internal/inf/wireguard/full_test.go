@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 		panic(err)
 	}
 
-	err = wg.SetPublic("DHh7F/FVyOJ6GXkS/pvCnrlc6QKRcyeevm+j4KKC9VE=")
+	err = wg.SetPeerPublic("DHh7F/FVyOJ6GXkS/pvCnrlc6QKRcyeevm+j4KKC9VE=")
 	if err != nil {
 		panic(err)
 	}
@@ -79,7 +79,7 @@ func TestNew2(t *testing.T) {
 		panic(err)
 	}
 
-	err = wg.SetPublic("V628GeW8NyDsqPS1EonOxeLDhPzRikJ4wbcvRhXErho=")
+	err = wg.SetPeerPublic("V628GeW8NyDsqPS1EonOxeLDhPzRikJ4wbcvRhXErho=")
 	if err != nil {
 		panic(err)
 	}

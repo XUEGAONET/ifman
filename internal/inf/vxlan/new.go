@@ -22,7 +22,7 @@ func New(v *VxLan) error {
 		TTL:      v.ttl,
 		TOS:      v.tos,
 		Learning: v.learning,
-		Port:     v.dstPort,
+		Port:     v.port,
 		PortLow:  v.srcPortLow,
 		PortHigh: v.srcPortHigh,
 	}

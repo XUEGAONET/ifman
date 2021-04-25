@@ -40,11 +40,11 @@ func afDummy(c Interface) error {
 			return err
 		}
 
-		if dummy.Equal(getInf, inf) {
+		if dummy.Equal(inf, getInf) {
 			logrus.Tracef("dummy interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("dummy interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("dummy interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = dummy.Update(inf)
 			if err != nil {
 				return err

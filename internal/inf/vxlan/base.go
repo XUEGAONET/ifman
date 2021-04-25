@@ -20,11 +20,11 @@ type VxLan struct {
 	learning    bool
 	srcPortLow  int
 	srcPortHigh int
-	dstPort     int
+	port        int
 }
 
-func (v *VxLan) SetDstPort(port uint16) {
-	v.dstPort = int(port)
+func (v *VxLan) SetPort(port uint16) {
+	v.port = int(port)
 }
 
 func (v *VxLan) SetSrcPortHigh(port uint16) {
@@ -123,7 +123,7 @@ func (v *VxLan) SetTxQueueLen(u uint16) {
 }
 
 func (v *VxLan) check() error {
-	if v.name == "" {
+	if v.name == "" || v.vni == 0 {
 		return fmt.Errorf("invalid parameter")
 	}
 
@@ -145,6 +145,6 @@ func GetAttr() *VxLan {
 		learning:    false,
 		srcPortLow:  0,
 		srcPortHigh: 0,
-		dstPort:     0,
+		port:        0,
 	}
 }

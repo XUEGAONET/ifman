@@ -34,7 +34,7 @@ func afWireGuard(c Interface) error {
 		}
 	}
 	if v, ok := c.Config["peer_public"]; ok {
-		err := inf.SetPublic(v.(string))
+		err := inf.SetPeerPublic(v.(string))
 		if err != nil {
 			return err
 		}
@@ -61,11 +61,11 @@ func afWireGuard(c Interface) error {
 			return err
 		}
 
-		if wireguard.Equal(getInf, inf) {
+		if wireguard.Equal(inf, getInf) {
 			logrus.Tracef("wireguard interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("wireguard interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("wireguard interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = wireguard.Update(inf)
 			if err != nil {
 				return err

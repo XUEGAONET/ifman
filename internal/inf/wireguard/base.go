@@ -50,7 +50,7 @@ func (w *WireGuard) SetPrivate(s string) error {
 	return nil
 }
 
-func (w *WireGuard) SetPublic(s string) error {
+func (w *WireGuard) SetPeerPublic(s string) error {
 	b, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return err
@@ -124,7 +124,8 @@ func (w *WireGuard) SetHandshakeIntervalSec(u uint16) {
 
 func (w *WireGuard) check() error {
 	if w.name == "" || w.private == nil || w.peerPublic == nil ||
-		(w.hsInterval != nil && w.listenPort != 0 && w.endpoint != nil) {
+		(w.hsInterval != nil && w.listenPort != 0 && w.endpoint != nil) ||
+		(w.hsInterval == nil && w.listenPort == 0 && w.endpoint == nil) {
 		return fmt.Errorf("invalid parameter")
 	}
 	return nil

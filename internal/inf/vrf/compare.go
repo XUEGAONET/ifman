@@ -1,12 +1,16 @@
 package vrf
 
-func Equal(a, b *Vrf) bool {
-	if a.mac.String() != b.mac.String() {
-		return false
+func Equal(expect, get *Vrf) bool {
+	if expect.mac != nil {
+		if expect.mac.String() != get.mac.String() {
+			return false
+		}
 	}
 
-	if a.tableId != b.tableId {
-		return false
+	if expect.tableId != 0 {
+		if expect.tableId != get.tableId {
+			return false
+		}
 	}
 
 	return true

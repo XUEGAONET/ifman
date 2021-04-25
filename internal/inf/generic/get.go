@@ -1,7 +1,6 @@
 package generic
 
 import (
-	"fmt"
 	"github.com/vishvananda/netlink"
 )
 
@@ -11,17 +10,12 @@ func Get(name string) (*Generic, error) {
 		return nil, err
 	}
 
-	d, ok := link.(netlink.Link)
-	if !ok {
-		return nil, fmt.Errorf("LinkByName type asserting failed")
-	}
-
 	res := GetAttr()
-	res.name = d.Attrs().Name
-	res.mtu = d.Attrs().MTU
-	res.txQueueLen = d.Attrs().TxQLen
-	res.mac = d.Attrs().HardwareAddr
-	res.masterId = d.Attrs().MasterIndex
+	res.name = link.Attrs().Name
+	res.mtu = link.Attrs().MTU
+	res.txQueueLen = link.Attrs().TxQLen
+	res.mac = link.Attrs().HardwareAddr
+	res.masterId = link.Attrs().MasterIndex
 
 	return res, err
 }

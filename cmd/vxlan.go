@@ -70,8 +70,8 @@ func afVxLan(c Interface) error {
 	if v, ok := c.Config["src_port_high"]; ok {
 		inf.SetSrcPortHigh(uint16(v.(int)))
 	}
-	if v, ok := c.Config["dst_port"]; ok {
-		inf.SetDstPort(uint16(v.(int)))
+	if v, ok := c.Config["port"]; ok {
+		inf.SetPort(uint16(v.(int)))
 	}
 
 	if exist.IsExisted(c.Name) { // existed
@@ -80,11 +80,11 @@ func afVxLan(c Interface) error {
 			return err
 		}
 
-		if vxlan.Equal(getInf, inf) {
+		if vxlan.Equal(inf, getInf) {
 			logrus.Tracef("vxlan interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("vxlan interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("vxlan interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = vxlan.Update(inf)
 			if err != nil {
 				return err

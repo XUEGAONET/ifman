@@ -26,7 +26,7 @@ func Get(name string) (*VxLan, error) {
 	res.ttl = v.TTL
 	res.src = v.SrcAddr
 	res.dst = v.Group
-	res.dstPort = v.Port
+	res.port = v.Port
 	res.srcPortLow = v.PortLow
 	res.srcPortHigh = v.PortHigh
 	res.learning = v.Learning

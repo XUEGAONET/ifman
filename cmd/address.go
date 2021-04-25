@@ -15,6 +15,7 @@ func afAddress(name, ip string) error {
 	if err != nil {
 		return err
 	}
+
 	err = addr.New(a)
 	if err != nil {
 		if err == unix.EEXIST {

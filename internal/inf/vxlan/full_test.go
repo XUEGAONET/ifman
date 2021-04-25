@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 	}
 	v.SetTtl(16)
 	v.SetTos(7)
-	v.SetDstPort(4789)
+	v.SetPort(4789)
 	v.SetLearning()
 	err = v.SetVni(1111)
 	if err != nil {

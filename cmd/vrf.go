@@ -28,11 +28,11 @@ func afVrf(c Interface) error {
 			return err
 		}
 
-		if vrf.Equal(getInf, inf) {
+		if vrf.Equal(inf, getInf) {
 			logrus.Tracef("vrf interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("vrf interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("vrf interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = vrf.Update(inf)
 			if err != nil {
 				return err

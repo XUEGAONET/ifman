@@ -1,7 +1,6 @@
 package dummy
 
 import (
-	"fmt"
 	"github.com/vishvananda/netlink"
 )
 
@@ -11,17 +10,12 @@ func Get(name string) (*Dummy, error) {
 		return nil, err
 	}
 
-	d, ok := link.(*netlink.Dummy)
-	if !ok {
-		return nil, fmt.Errorf("LinkByName type asserting failed")
-	}
-
 	res := GetAttr()
-	res.name = d.Name
-	res.mtu = d.MTU
-	res.mac = d.HardwareAddr
-	res.masterId = d.MasterIndex
-	res.txQueueLen = d.TxQLen
+	res.name = link.Attrs().Name
+	res.mtu = link.Attrs().MTU
+	res.mac = link.Attrs().HardwareAddr
+	res.masterId = link.Attrs().MasterIndex
+	res.txQueueLen = link.Attrs().TxQLen
 
 	return res, err
 }

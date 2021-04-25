@@ -48,11 +48,11 @@ func afTun(c Interface) error {
 			return err
 		}
 
-		if tun.Equal(getInf, inf) {
+		if tun.Equal(inf, getInf) {
 			logrus.Tracef("tun interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("tun interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("tun interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = tun.Update(inf)
 			if err != nil {
 				return err

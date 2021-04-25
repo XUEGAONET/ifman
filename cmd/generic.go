@@ -41,11 +41,11 @@ func afGeneric(c Interface) error {
 			return err
 		}
 
-		if generic.Equal(getInf, inf) {
+		if generic.Equal(inf, getInf) {
 			logrus.Tracef("generic interface %s check passed", c.Name)
 			return nil
 		} else {
-			logrus.Debugf("generic interface %s check error: current: %#v, want: %#v", c.Name, getInf, inf)
+			logrus.Debugf("generic interface %s check error: expect: %#v, get: %#v", c.Name, inf, getInf)
 			err = generic.Update(inf)
 			if err != nil {
 				return err
