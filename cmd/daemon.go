@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -14,7 +15,10 @@ import (
 func main() {
 	conf := RootConfig{}
 
-	confArr, err := openConf("config.yaml")
+	arg := flag.String("config", "config.yaml", "config path")
+	flag.Parse()
+
+	confArr, err := openConf(*arg)
 	if err != nil {
 		panic(err)
 	}
