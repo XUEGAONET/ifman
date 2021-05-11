@@ -11,6 +11,8 @@ func afInterface(c Interface) error {
 
 	// create or update interface
 	switch c.Type {
+	case "bridge":
+		err = afBridge(c)
 	case "generic":
 		err = afGeneric(c)
 	case "dummy":

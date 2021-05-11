@@ -42,6 +42,12 @@ interface:
 #      mac: 94:94:26:ff:00:01
 #      master: ""
 
+#      # bridge
+#      mtu: 1200
+#      tx_queue_len: 4096
+#      mac: 94:94:26:ff:00:33
+#      master: ""
+
 #      # tun
 #      mtu: 1400
 #      tx_queue_len: 4096
