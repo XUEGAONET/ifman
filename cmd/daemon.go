@@ -98,6 +98,8 @@ func initLogger(l Logger) error {
 		t.SetMaxAge(time.Duration(l.Rotate.Age) * time.Second)
 
 		cc = t
+	case "syslog":
+		cc = logger.ConfigSyslog{}
 	default:
 		return fmt.Errorf("invalid logger mode")
 	}

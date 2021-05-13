@@ -4,7 +4,9 @@ import (
 	"fmt"
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	lSyslog "github.com/sirupsen/logrus/hooks/syslog"
 	"io"
+	"log/syslog"
 	"os"
 )
 
@@ -31,6 +33,40 @@ func SetGlobal(level int, cc interface{}) error {
 	}
 	setWriter(writer)
 
+	_, ok := cc.(ConfigSyslog)
+	if ok {
+		err = setSyslog(level)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setSyslog(level int) error {
+	var l syslog.Priority
+	switch level {
+	case LevelTrace:
+		l = syslog.LOG_DEBUG
+	case LevelDebug:
+		l = syslog.LOG_DEBUG
+	case LevelInfo:
+		l = syslog.LOG_INFO
+	case LevelWarning:
+		l = syslog.LOG_WARNING
+	case LevelError:
+		l = syslog.LOG_ERR
+	case LevelFatal:
+		l = syslog.LOG_EMERG
+	}
+
+	hook, err := lSyslog.NewSyslogHook("", "", l, "ifman")
+	if err != nil {
+		return err
+	}
+
+	logrus.AddHook(hook)
 	return nil
 }
 
@@ -48,6 +84,8 @@ func getWriter(c interface{}) (io.Writer, error) {
 			rotatelogs.WithMaxAge(c.rotateMaxAge),
 			rotatelogs.WithRotationTime(c.rotatePeriod),
 		)
+	case ConfigSyslog:
+		result = os.Stdout
 	}
 
 	if err != nil {

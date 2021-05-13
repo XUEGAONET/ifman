@@ -1,6 +1,6 @@
 logger:
   # logger mode
-  #   value: stdout | single | rotate
+  #   value: stdout | single | rotate | syslog
   mode: stdout
 
   # logger level

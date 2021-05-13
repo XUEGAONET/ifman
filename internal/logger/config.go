@@ -42,3 +42,5 @@ func (receiver *ConfigAutoRotate) SetMaxAge(t time.Duration) {
 }
 
 type ConfigStdout struct{}
+
+type ConfigSyslog struct{}

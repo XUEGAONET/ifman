@@ -46,3 +46,14 @@ func TestSetGlobal3(t *testing.T) {
 	time.Sleep(2 * time.Second)
 	logrus.Errorln("auto rotate 2")
 }
+
+func TestSetGlobal4(t *testing.T) {
+	c := ConfigSyslog{}
+
+	err := SetGlobal(LevelTrace, c)
+	if err != nil {
+		panic(err)
+	}
+
+	logrus.Infof("teset")
+}
