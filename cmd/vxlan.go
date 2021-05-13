@@ -33,6 +33,12 @@ func afVxLan(c Interface) error {
 			return err
 		}
 	}
+	if v, ok := c.Config["vtep_dev"]; ok {
+		err := inf.SetVtep(v.(string))
+		if err != nil {
+			return err
+		}
+	}
 	if v, ok := c.Config["vni"]; ok {
 		err := inf.SetVni(uint32(v.(int)))
 		if err != nil {

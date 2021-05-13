@@ -22,6 +22,7 @@ func Get(name string) (*VxLan, error) {
 	res.txQueueLen = v.TxQLen
 	res.masterId = v.MasterIndex
 	res.vni = v.VxlanId
+	res.vtepId = v.VtepDevIndex
 	res.tos = v.TOS
 	res.ttl = v.TTL
 	res.src = v.SrcAddr

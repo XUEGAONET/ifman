@@ -64,6 +64,7 @@ interface:
 #      tx_queue_len: 4096 # 64 - 65535
 #      mac: 94:94:26:ff:00:01
 #      master: "" # name string or ""
+#      vtep_dev: "eth0"
 #      vni: 100 # 0 - 2^24
 #      src: 192.168.2.2
 #      dst: 192.168.3.2

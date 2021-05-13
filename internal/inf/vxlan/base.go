@@ -21,6 +21,17 @@ type VxLan struct {
 	srcPortLow  int
 	srcPortHigh int
 	port        int
+	vtepId      int
+}
+
+func (v *VxLan) SetVtep(s string) error {
+	id, err := common.PassMaster(s)
+	if err != nil {
+		return err
+	}
+
+	v.vtepId = id
+	return nil
 }
 
 func (v *VxLan) SetPort(port uint16) {
