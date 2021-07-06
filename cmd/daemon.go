@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"ifman/internal/logger"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
