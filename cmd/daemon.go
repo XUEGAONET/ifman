@@ -13,9 +13,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	version string = "v1.2.2"
+)
+
+func printVersion() {
+	fmt.Println("XUEGAONET Ifman ", version)
+	os.Exit(0)
+}
+
 func main() {
 	conf := RootConfig{}
 
+	flag.Usage = printVersion
 	arg := flag.String("config", "config.yaml", "config path")
 	flag.Parse()
 
