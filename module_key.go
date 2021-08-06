@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"regexp"
 )
+
+var reg *regexp.Regexp = nil
 
 // generateWireGuardKeyPair return public key and private key in string
 func generateWireGuardKeyPair() (string, string, error) {
@@ -38,4 +41,26 @@ func generateWireGuardKeyChain() {
 	fmt.Printf("WireGuard key chain do not contain [ and ] \n")
 	fmt.Printf("* Chain 1: [%s]\n", encoded1)
 	fmt.Printf("* Chain 2: [%s]\n", encoded2)
+}
+
+// DecodeWireGuardKeyChain will return private key and public key
+func DecodeWireGuardKeyChain(kc string) (string, string, error) {
+	decodeByte, err := base64.StdEncoding.DecodeString(kc)
+	if err != nil {
+		return "", "", errors.WithStack(err)
+	}
+	decode := string(decodeByte)
+
+	if reg == nil {
+		reg, err = regexp.Compile("^(?P<Private>.*?)\\|\\|(?P<Public>.*?)$")
+		if err != nil {
+			return "", "", errors.WithStack(err)
+		}
+	}
+
+	matches := reg.FindStringSubmatch(decode)
+	priIdx := reg.SubexpIndex("Private")
+	pubIdx := reg.SubexpIndex("Public")
+
+	return matches[priIdx], matches[pubIdx], nil
 }
