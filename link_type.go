@@ -22,12 +22,12 @@ func (receiver *BaseLink) GetBaseAttrs() *BaseLink {
 type Bridge struct {
 	BaseLink `yaml:",inline"`
 
-	MulticastSnoopingOn bool `yaml:"multicast_snooping"`
-	VlanFilteringOn     bool `yaml:"vlan_filtering"`
+	MulticastSnoopingOn bool `yaml:"multicast_snooping_on"`
+	VlanFilteringOn     bool `yaml:"vlan_filtering_on"`
 }
 
 type Dummy struct {
-	BaseLink
+	BaseLink `yaml:",inline"`
 }
 
 type IPTun struct {
@@ -47,8 +47,8 @@ type Unmanaged struct {
 type Tun struct {
 	BaseLink `yaml:",inline"`
 
-	MultiQueueOn bool  `yaml:"multi_queue"`
-	PersistOn    bool  `yaml:"persist"`
+	MultiQueueOn bool  `yaml:"multi_queue_on"`
+	PersistOn    bool  `yaml:"persist_on"`
 	Queues       uint8 `yaml:"queues"`
 }
 
@@ -73,7 +73,7 @@ type VxLAN struct {
 	DstIP       string `yaml:"dst_ip"`
 	Ttl         uint8  `yaml:"ttl"`
 	Tos         uint8  `yaml:"tos"`
-	LearningOn  bool   `yaml:"learning"`
+	LearningOn  bool   `yaml:"learning_on"`
 	SrcPortLow  uint16 `yaml:"src_port_low"`
 	SrcPortHigh uint16 `yaml:"src_port_high"`
 	Port        uint16 `yaml:"port"`
@@ -86,6 +86,8 @@ type WireGuardPtPServer struct {
 	ListenPort uint16 `yaml:"listen_port"`
 	Private    string `yaml:"private"`
 	PeerPublic string `yaml:"peer_public"`
+
+	KeyChain string `yaml:"key_chain"`
 }
 
 type WireGuardPtPClient struct {
@@ -95,6 +97,8 @@ type WireGuardPtPClient struct {
 	HeartbeatInterval uint32 `yaml:"heartbeat_interval"`
 	Private           string `yaml:"private"`
 	PeerPublic        string `yaml:"peer_public"`
+
+	KeyChain string `yaml:"key_chain"`
 }
 
 type WireGuardLink struct {
