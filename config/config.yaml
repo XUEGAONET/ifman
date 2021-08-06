@@ -1,60 +1,153 @@
 logger:
-  mode: stdout
-  level: trace
+  mode: single
+  level: debug
+  syslog_on: true
+
   single:
-    path: /tmp/ifman.log
-    perm: 0644
+    path: /data/ifman.log
+    permit: 0644
+
   rotate:
-    dir: /tmp
-    age: 1296000
-    cut_period: 86400
+    dir: /data/ifman/log
+    max_age_sec: 1296000 # save for 15 day
+    period_sec: 86400 # cutting every day
 
 interface:
-  - name: vxlan
-    description: vxlan
-    status: up
-    type: vxlan
-    config:
-      mtu: 1400
-      tx_queue_len: 4096
-      mac: 94:94:26:ff:00:02
-      master: ""
-      vni: 100
-      src:
-      dst: 100.101.16.223
-      ttl: 4
-      tos: 7
-      learning: false
-      src_port_low: 10240
-      src_port_high: 40960
-      dst_port: 4789
-    tso: false
-    lro: false
-    gso: false
-    gro: false
-    rp_filter: off
-    address:
-      - 10.11.1.1/30
+  - type: bridge
+    name: bridge0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:ee
+    multicast_snooping_on: true
+    vlan_filtering_on: true
 
-  - name: dummy
-    description: dummy
-    status: up
-    type: dummy
-    config:
-      mtu: 1200
-      tx_queue_len: 4096
-      mac: 94:94:26:ff:DD:01
-      master: ""
-    tso: false
-    lro: false
-    gso: false
-    gro: false
-    rp_filter: off
-    address:
-      - 10.10.1.1/32
+  - type: dummy
+    name: dummy0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:11
 
-route:
+  - type: iptun
+    name: ipip0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    ttl: 16
+    tos: 7
+    local_ip: 1.1.1.1
+    remote_ip: 1.1.1.2
 
-verify:
-  check_period: 60
+  - type: unmanaged
+    name: eth0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+
+  - type: tun
+    name: tun0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:11
+    multi_queue_on: true
+    persist_on: true
+    queues: 8
+
+  - type: vlan
+    name: vlan0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:11
+    vlan_id: 10
+    stacking_on: false
+
+  - type: vrf
+    name: vrf0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:11
+    table_id: 200
+
+  - type: vxlan
+    name: vxlan0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    mac: 94:94:26:a7:c8:11
+    vni: 1000
+    src_ip: 1.1.1.1
+    dst_ip: 2.2.2.2
+    ttl: 16
+    tos: 7
+    learning_on: false
+    src_port_low: 10240
+    src_port_high: 40960
+    port: 4789
+    vtep_name: eth0
+
+  - type: wireguard_ptp_server
+    name: wgs0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    listen_port: 10000
+    private: sss
+    peer_public: ssss
+    key_chain: sssssssss
+
+  - type: wireguard_ptp_client
+    name: wgc0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    endpoint: 1.1.1.1:6666
+    heartbeat_interval: 10
+    private: sssss
+    peer_public: ssssss
+    key_chain: ssssssssssssss
+
+addr:
+  - name: eth0
+    address: 192.168.1.1/24
+    ptp_mode: false
+    peer_prefix:
+
+  - name: vx0
+    address: 10.1.1.2/32
+    ptp_mode: true
+    peer_prefix: 10.1.1.2/32
+
+rp_filter:
+  - name: eth0
+    mode: off
+
+  - name: vx0
+    mode: strict
+
+  - name: vx1
+    mode: loose
+
+learning:
+  - name: vx0
+    learning_on: true
+
+  - name: vx1
+    learning_on: false
+
+common:
+  check_period_sec: 60
 
