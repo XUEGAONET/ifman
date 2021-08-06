@@ -71,6 +71,9 @@ func printVersion() {
 	banner += fmt.Sprintf("* Loaded modules: %s\n", loadedModules())
 
 	fmt.Println(banner)
+	fmt.Println("Usage: ")
+	flag.PrintDefaults()
+
 	os.Exit(0)
 }
 
