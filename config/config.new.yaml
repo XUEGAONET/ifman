@@ -1,0 +1,16 @@
+logger:
+  mode: single
+  level: debug
+  syslog_on: true
+
+  single:
+    path: /data/ifman.log
+    permit: 0644
+
+  rotate:
+    dir: /data/ifman/log
+    max_age_sec: 1296000 # save for 15 day
+    period_sec: 86400 # cutting every day
+
+common:
+  check_period_sec: 60

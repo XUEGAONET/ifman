@@ -23,54 +23,135 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
+	"fmt"
+	"github.com/XUEGAONET/ifman/utils/pid"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 	"os"
-
-	clientv3 "go.etcd.io/etcd/client/v3"
 )
-
-type cmdLineOpts struct {
-	mode string
-
-	// local configuration mode
-	localPath string
-
-	// etcd configuration mode
-	etcdEndpoints []string
-	etcdCAPath    string
-}
 
 var (
 	// global version
 	version string = "v2.0"
-
-	config cmdLineOpts
 )
 
+// global config
+const (
+	pidFile = "/var/run/ifman.pid"
+)
+
+func loadedModules() string {
+	// global modules
+	modules := []string{
+		"core",
+		"test",
+		"key",
+		"reload",
+	}
+
+	var res string
+	for i, _ := range modules {
+		res += modules[i]
+
+		if i+1 == len(modules) {
+			break
+		} else {
+			res += ", "
+		}
+	}
+
+	return res
+}
+
+func printVersion() {
+	var banner string
+	banner += fmt.Sprintf("XUEGAONET  https://github.com/XUEGAONET\n")
+	banner += fmt.Sprintf("* Component: ifman, Interface Manager\n")
+	banner += fmt.Sprintf("* Version: %s\n", version)
+	banner += fmt.Sprintf("* Loaded modules: %s\n", loadedModules())
+
+	fmt.Println(banner)
+	os.Exit(0)
+}
+
 func main() {
-	flag.StringVar()
+	// config variable
+	var (
+		configFile string
+		module     string
+	)
 
-	switch config.mode {
-	case "local":
-		yaml
+	flag.Usage = printVersion
+	flag.StringVar(&configFile, "config", "config.yaml", "yaml config path")
+	flag.StringVar(&module, "module", "", "which module you want to use")
+	flag.Parse()
+
+	switch module {
+	case "test":
+		_, err := parseLocalConfig(configFile)
+		if err != nil {
+			panic(err)
+		} else {
+			fmt.Println("OK")
+		}
+	case "core":
+		// init dynamic core config
+		err := initCoreConfig(configFile)
+		if err != nil {
+			panic(err)
+		}
+
+		// get newest core config and init logger
+		lc := getCoreConfig()
+		err = initLogger(&lc.Logger)
+		if err != nil {
+			panic(err)
+		}
+
+		// create pid file and log to log
+		pidf := pid.New(pidFile)
+		err = pidf.Init()
+		if err != nil {
+			panic(err)
+		}
+		defer pidf.Remove()
+
+		p, err := pidf.Get()
+		if err != nil {
+			panic(err)
+		}
+		logrus.Infof("ifman pid: %d", p)
+
+		// start core service
+		err = startCoreService()
+		if err != nil {
+			panic(err)
+		}
+	case "key":
+		generateWireGuardKeyChain()
+	case "reload":
+		sendReloadSignal()
+	default:
+		fmt.Printf("Please specify the module you want to use.\n")
 	}
-
-	clientv3.New()
 }
 
-func parseLocalConfig(path string) {
-	b, err := readFile(path)
+func sendReloadSignal() {
+	pidf := pid.New(pidFile)
+
+	pp, err := pidf.Get()
 	if err != nil {
-
+		panic(err)
 	}
-}
 
-func readFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
+	p, err := os.FindProcess(pp)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	defer f.Close()
+	err = p.Signal(unix.SIGUSR1)
+	if err != nil {
+		panic(err)
+	}
 
-	return ioutil.ReadAll(f)
+	fmt.Println("send reload signal succeed, please care about the log ifman output")
 }
