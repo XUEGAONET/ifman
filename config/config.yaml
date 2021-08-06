@@ -9,8 +9,8 @@ logger:
 
   rotate:
     dir: /data/ifman/log
-    max_age_sec: 1296000 # save for 15 day
-    period_sec: 86400 # cutting every day
+    max_age_sec: 1296000
+    period_sec: 86400
 
 interface:
   - type: bridge
@@ -104,9 +104,9 @@ interface:
     mtu: 1500
     master_name: ""
     listen_port: 10000
-    private: sss
-    peer_public: ssss
-    key_chain: sssssssss
+    private: your_key
+    peer_public: peer_key
+    key_chain: key_chain
 
   - type: wireguard_ptp_client
     name: wgc0
@@ -116,9 +116,9 @@ interface:
     master_name: ""
     endpoint: 1.1.1.1:6666
     heartbeat_interval: 10
-    private: sssss
-    peer_public: ssssss
-    key_chain: ssssssssssssss
+    private: your_key
+    peer_public: peer_key
+    key_chain: key_chain
 
 addr:
   - name: eth0
@@ -129,7 +129,7 @@ addr:
   - name: vx0
     address: 10.1.1.2/32
     ptp_mode: true
-    peer_prefix: 10.1.1.2/32
+    peer_prefix: 10.1.1.1/32
 
 rp_filter:
   - name: eth0
