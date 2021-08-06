@@ -25,7 +25,7 @@ func UpdateRpFilter(rpf *RpFilter) error {
 	case "loose":
 		want = rpfp.RPF_LOOSE
 	default:
-		return fmt.Errorf("unsupported rp_filter mode")
+		return errors.WithStack(fmt.Errorf("unsupported rp_filter mode"))
 	}
 
 	err := rpfp.CheckAndFix(rpf.Name, want)
