@@ -1,4 +1,0 @@
-interface:
-  - name: test
-    type: ipip
-    remote_ip: 1.1.1.1
