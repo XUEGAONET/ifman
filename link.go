@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -17,6 +19,8 @@ const (
 )
 
 func NewLink(link Link) error {
+	logrus.Debugf("new link: %#v", link)
+
 	var err error = nil
 	var nLink netlink.Link = nil
 
@@ -172,7 +176,7 @@ func newBase(hLink Link, lLink netlink.Link) error {
 	switch getLinkType(hLink) {
 	case LinkTypeLayer2:
 		if high.Mac != "" {
-			mac, err := net.ParseMAC(high.Mac)
+			mac, err := net.ParseMAC(strings.ToLower(high.Mac))
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -207,6 +211,8 @@ func newBase(hLink Link, lLink netlink.Link) error {
 }
 
 func UpdateLink(link Link) error {
+	logrus.Debugf("update link: %#v", link)
+
 	var err error = nil
 	var nLink netlink.Link = nil
 
@@ -219,16 +225,31 @@ func UpdateLink(link Link) error {
 	case *Dummy:
 	case *Bridge:
 	case *IPTun:
+	case *Unmanaged:
 	case *Tun:
 	case *Vlan:
 	case *Vrf:
 	case *VxLAN:
 	case *WireGuardPtPServer:
+		pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		l.Private = pri
+		l.PeerPublic = pub
+
 		err = checkAndRebuildWireGuard(l)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 	case *WireGuardPtPClient:
+		pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		l.Private = pri
+		l.PeerPublic = pub
+
 		err = checkAndRebuildWireGuard(l)
 		if err != nil {
 			return errors.WithStack(err)
@@ -370,63 +391,85 @@ func wgClientConf(peerPubKey, privateKey string, endpoint string, heartbeatInter
 }
 
 func updateBase(hLink Link, lLink netlink.Link) error {
-	var err error
+	// high level attrs
 	high := hLink.GetBaseAttrs()
+	// low level attrs
+	low := lLink.Attrs()
 
-	if up := lLink.Attrs().Flags&net.FlagUp == net.FlagUp; up != high.LinkUp {
-		err = netlink.LinkSetUp(lLink)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
+	var err error = nil
 
-	if mac := lLink.Attrs().HardwareAddr; mac != nil {
-		if mac.String() != high.Mac {
-			newMac, err := net.ParseMAC(high.Mac)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-			err = netlink.LinkSetHardwareAddr(lLink, newMac)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-		}
-	}
-
-	if high.MasterName == "" {
-		if lLink.Attrs().MasterIndex != 0 {
-			err = netlink.LinkSetNoMaster(lLink)
-			if err != nil {
-				return errors.WithStack(err)
+	switch getLinkType(hLink) {
+	case LinkTypeLayer2:
+		if high.Mac != "" {
+			if strings.ToLower(low.HardwareAddr.String()) != strings.ToLower(high.Mac) {
+				newMac, err := net.ParseMAC(strings.ToLower(high.Mac))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+				err = netlink.LinkSetHardwareAddr(lLink, newMac)
+				if err != nil {
+					return errors.WithStack(err)
+				}
 			}
 		}
-	} else {
-		master, err := netlink.LinkByName(high.MasterName)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		if master.Attrs().Index != lLink.Attrs().MasterIndex {
-			err = netlink.LinkSetMaster(lLink, master)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-		}
-	}
 
-	if high.Mtu != 0 {
-		if high.Mtu != uint16(lLink.Attrs().MTU) {
-			err = netlink.LinkSetMTU(lLink, int(high.Mtu))
+		fallthrough
+	case LinkTypeLayer3:
+
+		fallthrough
+	default:
+		// link status
+		linkUp := low.Flags&net.FlagUp == net.FlagUp
+		if linkUp != high.LinkUp {
+			if high.LinkUp {
+				err = netlink.LinkSetUp(lLink)
+			} else {
+				err = netlink.LinkSetDown(lLink)
+			}
+
 			if err != nil {
 				return errors.WithStack(err)
 			}
 		}
-	}
 
-	if high.TxQueueLen != 0 {
-		if high.TxQueueLen != uint16(lLink.Attrs().TxQLen) {
-			err = netlink.LinkSetTxQLen(lLink, int(high.TxQueueLen))
+		// link master
+		if high.MasterName == "" {
+			if low.MasterIndex != 0 {
+				err = netlink.LinkSetNoMaster(lLink)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+		} else {
+			master, err := netlink.LinkByName(high.MasterName)
 			if err != nil {
 				return errors.WithStack(err)
+			}
+			if master.Attrs().Index != low.MasterIndex {
+				err = netlink.LinkSetMaster(lLink, master)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+		}
+
+		// link mtu
+		if high.Mtu != 0 {
+			if high.Mtu != uint16(low.MTU) {
+				err = netlink.LinkSetMTU(lLink, int(high.Mtu))
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+		}
+
+		// link txQueueLen
+		if high.TxQueueLen != 0 {
+			if high.TxQueueLen != uint16(low.TxQLen) {
+				err = netlink.LinkSetTxQLen(lLink, int(high.TxQueueLen))
+				if err != nil {
+					return errors.WithStack(err)
+				}
 			}
 		}
 	}

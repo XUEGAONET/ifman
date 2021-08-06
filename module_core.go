@@ -25,7 +25,12 @@ func startCoreService() error {
 
 	select {
 	case <-ticker:
-		processAllLink()
+		conf := getCoreConfig()
+
+		processAllLink(conf)
+		processAllRpFilter(conf)
+		processAllLearning(conf)
+		processAllAddr(conf)
 	case <-refreshEvent:
 		err := refreshCoreConfig()
 		if err != nil {
@@ -36,10 +41,61 @@ func startCoreService() error {
 	return nil
 }
 
-func processAllLink() {
-	logrus.Debug("start to process all link")
+func processAllLearning(conf *Config) {
+	logrus.Infoln("start to process all learning")
 
-	conf := getCoreConfig()
+	for i, _ := range conf.Learning {
+		c := conf.Learning[i]
+
+		err := UpdateLearning(&c)
+		if err != nil {
+			logrus.Errorf("update learning mode failed: %s", err.Error())
+			continue
+		}
+	}
+}
+
+func processAllRpFilter(conf *Config) {
+	logrus.Infoln("start to process all rp_filter")
+
+	for i, _ := range conf.RpFilter {
+		c := conf.RpFilter[i]
+
+		err := UpdateRpFilter(&c)
+		if err != nil {
+			logrus.Errorf("update rp_filter failed: %s", err.Error())
+			continue
+		}
+	}
+}
+
+func processAllAddr(conf *Config) {
+	logrus.Infoln("start to process all addr")
+
+	for i, _ := range conf.Addr {
+		c := conf.Addr[i]
+
+		exist, err := IsAddrExist(&c)
+		if err != nil {
+			logrus.Errorf("get addr exist status failed: %s", err.Error())
+			continue
+		}
+
+		if exist {
+			err = UpdateAddr(&c)
+		} else {
+			err = NewAddr(&c)
+		}
+		if err != nil {
+			logrus.Errorf("update or new addr failed: %s", err.Error())
+			continue
+		}
+	}
+}
+
+func processAllLink(conf *Config) {
+	logrus.Infoln("start to process all link")
+
 	for i, _ := range conf.Interface {
 		c := conf.Interface[i]
 
@@ -83,6 +139,11 @@ func processOneLink(link Link) error {
 		// link not exist
 		if errors.Is(err, os.ErrNotExist) {
 			err = NewLink(link)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			err = UpdateLink(link)
 			if err != nil {
 				return errors.WithStack(err)
 			}
