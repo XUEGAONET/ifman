@@ -13,6 +13,9 @@ import (
 type Config struct {
 	Logger    Logger        `yaml:"logger"`
 	Interface []interface{} `yaml:"interface"`
+	Addr      []Addr        `yaml:"addr"`
+	RpFilter  []RpFilter    `yaml:"rp_filter"`
+	Learning  []Learning    `yaml:"learning"`
 	Common    Common        `yaml:"common"`
 }
 
