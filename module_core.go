@@ -6,7 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 	netlink "github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v3"
-	"os"
 	"strings"
 	"time"
 )
@@ -23,22 +22,22 @@ func startCoreService() error {
 		}
 	}()
 
-	select {
-	case <-ticker:
-		conf := getCoreConfig()
+	for {
+		select {
+		case <-ticker:
+			conf := getCoreConfig()
 
-		processAllLink(conf)
-		processAllRpFilter(conf)
-		processAllLearning(conf)
-		processAllAddr(conf)
-	case <-refreshEvent:
-		err := refreshCoreConfig()
-		if err != nil {
-			return errors.WithStack(err)
+			processAllLink(conf)
+			processAllRpFilter(conf)
+			processAllLearning(conf)
+			processAllAddr(conf)
+		case <-refreshEvent:
+			err := refreshCoreConfig()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	}
-
-	return nil
 }
 
 func processAllLearning(conf *Config) {
@@ -49,7 +48,7 @@ func processAllLearning(conf *Config) {
 
 		err := UpdateLearning(&c)
 		if err != nil {
-			logrus.Errorf("update learning mode failed: %s", err.Error())
+			logrus.Errorf("update learning mode failed: %+v", err)
 			continue
 		}
 	}
@@ -63,7 +62,7 @@ func processAllRpFilter(conf *Config) {
 
 		err := UpdateRpFilter(&c)
 		if err != nil {
-			logrus.Errorf("update rp_filter failed: %s", err.Error())
+			logrus.Errorf("update rp_filter failed: %+v", err)
 			continue
 		}
 	}
@@ -77,7 +76,7 @@ func processAllAddr(conf *Config) {
 
 		exist, err := IsAddrExist(&c)
 		if err != nil {
-			logrus.Errorf("get addr exist status failed: %s", err.Error())
+			logrus.Errorf("get addr exist status failed: %+v", err)
 			continue
 		}
 
@@ -87,7 +86,7 @@ func processAllAddr(conf *Config) {
 			err = NewAddr(&c)
 		}
 		if err != nil {
-			logrus.Errorf("update or new addr failed: %s", err.Error())
+			logrus.Errorf("update or new addr failed: %+v", err)
 			continue
 		}
 	}
@@ -107,7 +106,7 @@ func processAllLink(conf *Config) {
 
 		name, typ, err := getInfoFromLink(l)
 		if err != nil {
-			logrus.Errorf("get info from link failed: %s", err.Error())
+			logrus.Errorf("get info from link failed: %+v", err)
 			continue
 		}
 
@@ -115,19 +114,19 @@ func processAllLink(conf *Config) {
 
 		b, err := yaml.Marshal(c)
 		if err != nil {
-			logrus.Errorf("marshal one link config failed: %s", err.Error())
+			logrus.Errorf("marshal one link config failed: %+v", err)
 			continue
 		}
 
 		newLink, err := getLinkFromYaml(typ, b)
 		if err != nil {
-			logrus.Errorf("get link from yaml failed: %s", err.Error())
+			logrus.Errorf("get link from yaml failed: %+v", err)
 			continue
 		}
 
 		err = processOneLink(newLink)
 		if err != nil {
-			logrus.Errorf("process one link failed: %s", err.Error())
+			logrus.Errorf("process one link failed: %+v", err)
 			continue
 		}
 	}
@@ -137,7 +136,10 @@ func processOneLink(link Link) error {
 	_, err := netlink.LinkByName(link.GetBaseAttrs().Name)
 	if err != nil {
 		// link not exist
-		if errors.Is(err, os.ErrNotExist) {
+		// netlink的包太垃圾了，迫使我只能这样写了
+		_, ok1 := err.(*netlink.LinkNotFoundError)
+		_, ok2 := err.(netlink.LinkNotFoundError)
+		if ok1 || ok2 {
 			err = NewLink(link)
 			if err != nil {
 				return errors.WithStack(err)
@@ -147,10 +149,10 @@ func processOneLink(link Link) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+		} else {
+			// unexpected error
+			return errors.Wrap(err, "process one link with unexpected error")
 		}
-
-		// unexpected error
-		return errors.WithStack(err)
 	} else { // no error
 		err = UpdateLink(link)
 		if err != nil {
@@ -164,22 +166,22 @@ func processOneLink(link Link) error {
 func getInfoFromLink(link map[string]interface{}) (string, string, error) {
 	tName, ok := link["name"]
 	if !ok {
-		return "", "", fmt.Errorf("get name from link map failed")
+		return "", "", errors.WithStack(fmt.Errorf("get name from link map failed"))
 	}
 
 	name, ok := tName.(string)
 	if !ok {
-		return "", "", fmt.Errorf("convert name from interface to string failed")
+		return "", "", errors.WithStack(fmt.Errorf("convert name from interface to string failed"))
 	}
 
 	tTyp, ok := link["type"]
 	if !ok {
-		return "", "", fmt.Errorf("get type from link map failed")
+		return "", "", errors.WithStack(fmt.Errorf("get type from link map failed"))
 	}
 
 	typ, ok := tTyp.(string)
 	if !ok {
-		return "", "", fmt.Errorf("convert type from interface to string failed")
+		return "", "", errors.WithStack(fmt.Errorf("convert type from interface to string failed"))
 	}
 
 	return name, typ, nil
@@ -211,10 +213,10 @@ func getLinkFromYaml(typ string, b []byte) (Link, error) {
 	case "wireguard_ptp_client":
 		link = &WireGuardPtPClient{}
 	default:
-		return nil, fmt.Errorf("unsopprted link type from yaml")
+		return nil, errors.WithStack(fmt.Errorf("unsopprted link type from yaml"))
 	}
 
-	err = yaml.Unmarshal(b, &link)
+	err = yaml.Unmarshal(b, link)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
