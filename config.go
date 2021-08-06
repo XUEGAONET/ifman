@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -93,6 +94,8 @@ func refreshCoreConfig() error {
 	}
 
 	coreConfig.conf = c
+
+	logrus.Infof("core config refreshed")
 
 	return nil
 }
