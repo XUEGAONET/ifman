@@ -8,11 +8,16 @@ import (
 	"syscall"
 )
 
-func ListenSocket(path string) error {
-	c, err := net.Listen("unix", path)
+func ListenCtl(port uint16) error {
+	addr, err := net.ResolveTCPAddr("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	c, err := net.ListenTCP("tcp4", addr)
 	if err != nil {
 		if errors.Is(err, syscall.EADDRINUSE) {
-			return errors.WithStack(fmt.Errorf("socket file exist, do not run the second ifman on the same time"))
+			return errors.WithStack(fmt.Errorf("port exist, do not run the second ifman on the same time"))
 		} else {
 			return errors.WithStack(err)
 		}
@@ -22,7 +27,7 @@ func ListenSocket(path string) error {
 		for {
 			conn, err := c.Accept()
 			if err != nil {
-				logrus.Warnf("accept conn from unix socket failed: %+v", errors.WithStack(err))
+				logrus.Warnf("accept conn from socket failed: %+v", errors.WithStack(err))
 				continue
 			}
 
@@ -33,7 +38,7 @@ func ListenSocket(path string) error {
 
 				n, err := conn.Read(buf)
 				if err != nil {
-					logrus.Warnf("read from unix conn failed: %+v", errors.WithStack(err))
+					logrus.Warnf("read from conn failed: %+v", errors.WithStack(err))
 					return
 				}
 
@@ -51,8 +56,8 @@ func ListenSocket(path string) error {
 	return nil
 }
 
-func SendReload(path string) error {
-	c, err := net.Dial("unix", path)
+func SendReload(port uint16) error {
+	c, err := net.Dial("tcp4", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return errors.WithStack(err)
 	}

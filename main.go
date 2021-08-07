@@ -34,7 +34,7 @@ var (
 
 // global config
 const (
-	sockFile = "/var/run/ifman.socket"
+	ctlPort = 11073
 )
 
 func loadedModules() string {
@@ -109,7 +109,7 @@ func main() {
 		}
 
 		// listen socket
-		err = ListenSocket(sockFile)
+		err = ListenCtl(ctlPort)
 		if err != nil {
 			panic(err)
 		}
@@ -122,7 +122,7 @@ func main() {
 	case "key":
 		generateWireGuardKeyChain()
 	case "reload":
-		err := SendReload(sockFile)
+		err := SendReload(ctlPort)
 		if err != nil {
 			panic(err)
 		}
