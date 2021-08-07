@@ -31,7 +31,7 @@ func SetLog(level string, w Writer, useSyslog bool) error {
 		ForceColors:               false,
 		DisableColors:             false,
 		ForceQuote:                false,
-		DisableQuote:              false,
+		DisableQuote:              true,
 		EnvironmentOverrideColors: false,
 		DisableTimestamp:          false,
 		FullTimestamp:             false,

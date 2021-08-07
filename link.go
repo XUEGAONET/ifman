@@ -55,7 +55,7 @@ func NewLink(link Link) error {
 		if l.LocalIP != "" {
 			ip := net.ParseIP(l.LocalIP)
 			if ip == nil {
-				return fmt.Errorf("parse ip address failed")
+				return errors.WithStack(fmt.Errorf("parse ip address failed"))
 			}
 			nLink.(*netlink.Iptun).Local = ip
 		}
@@ -63,7 +63,7 @@ func NewLink(link Link) error {
 		if l.RemoteIP != "" {
 			ip := net.ParseIP(l.RemoteIP)
 			if ip == nil {
-				return fmt.Errorf("parse ip address failed")
+				return errors.WithStack(fmt.Errorf("parse ip address failed"))
 			}
 			nLink.(*netlink.Iptun).Remote = ip
 		}
@@ -127,7 +127,7 @@ func NewLink(link Link) error {
 		if l.SrcIp != "" {
 			ip := net.ParseIP(l.SrcIp)
 			if ip == nil {
-				return errors.New("parse ip address failed")
+				return errors.WithStack(errors.New("parse ip address failed"))
 			}
 			nLink.(*netlink.Vxlan).SrcAddr = ip
 		}
@@ -135,7 +135,7 @@ func NewLink(link Link) error {
 		if l.DstIP != "" {
 			ip := net.ParseIP(l.DstIP)
 			if ip == nil {
-				return errors.New("parse ip address failed")
+				return errors.WithStack(errors.New("parse ip address failed"))
 			}
 			nLink.(*netlink.Vxlan).Group = ip
 		}
@@ -156,7 +156,7 @@ func NewLink(link Link) error {
 			LinkAttrs: netlink.LinkAttrs{},
 		}
 	default:
-		return fmt.Errorf("unsupport high level link type")
+		return errors.WithStack(fmt.Errorf("unsupport high level link type"))
 	}
 
 	err = newBase(link, nLink)
@@ -164,7 +164,12 @@ func NewLink(link Link) error {
 		return errors.WithStack(err)
 	}
 
-	return netlink.LinkAdd(nLink)
+	err = netlink.LinkAdd(nLink)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func newBase(hLink Link, lLink netlink.Link) error {
@@ -255,7 +260,7 @@ func UpdateLink(link Link) error {
 			return errors.WithStack(err)
 		}
 	default:
-		return fmt.Errorf("unsupport high level link type")
+		return errors.WithStack(fmt.Errorf("unsupport high level link type"))
 	}
 
 	err = updateBase(link, nLink)
@@ -296,7 +301,7 @@ func checkAndRebuildWireGuard(link Link) error {
 			}
 		}
 	default:
-		return fmt.Errorf("unsupport check and rebuild wireguard type")
+		return errors.WithStack(fmt.Errorf("unsupport check and rebuild wireguard type"))
 	}
 
 	err = cli.ConfigureDevice(link.GetBaseAttrs().Name, *conf)
