@@ -24,9 +24,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/XUEGAONET/ifman/utils/pid"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 	"os"
 )
 
@@ -37,7 +34,7 @@ var (
 
 // global config
 const (
-	pidFile = "/var/run/ifman.pid"
+	sockFile = "/var/run/ifman.socket"
 )
 
 func loadedModules() string {
@@ -111,19 +108,11 @@ func main() {
 			panic(err)
 		}
 
-		// create pid file and log to log
-		pidf := pid.New(pidFile)
-		err = pidf.Init()
+		// listen socket
+		err = ListenSocket(sockFile)
 		if err != nil {
 			panic(err)
 		}
-		defer pidf.Remove()
-
-		p, err := pidf.Get()
-		if err != nil {
-			panic(err)
-		}
-		logrus.Infof("ifman pid: %d", p)
 
 		// start core service
 		err = startCoreService()
@@ -133,28 +122,12 @@ func main() {
 	case "key":
 		generateWireGuardKeyChain()
 	case "reload":
-		sendReloadSignal()
+		err := SendReload(sockFile)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("send reload succeed, please care about the log ifman output")
 	default:
 		fmt.Printf("Please specify the module you want to use.\n")
 	}
-}
-
-func sendReloadSignal() {
-	pidf := pid.New(pidFile)
-
-	pp, err := pidf.Get()
-	if err != nil {
-		panic(err)
-	}
-
-	p, err := os.FindProcess(pp)
-	if err != nil {
-		panic(err)
-	}
-	err = p.Signal(unix.SIGUSR1)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("send reload signal succeed, please care about the log ifman output")
 }

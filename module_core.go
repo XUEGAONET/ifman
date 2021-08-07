@@ -31,11 +31,6 @@ func startCoreService() error {
 			processAllRpFilter(conf)
 			processAllLearning(conf)
 			processAllAddr(conf)
-		case <-refreshEvent:
-			err := refreshCoreConfig()
-			if err != nil {
-				return errors.WithStack(err)
-			}
 		}
 	}
 }

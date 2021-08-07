@@ -6,9 +6,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 )
 
 type Config struct {
@@ -75,7 +73,6 @@ type DynamicConfig struct {
 }
 
 var coreConfig DynamicConfig
-var refreshEvent = make(chan os.Signal, 1)
 
 func getCoreConfig() *Config {
 	coreConfig.lock.RLock()
@@ -115,8 +112,6 @@ func initCoreConfig(path string) error {
 	coreConfig.lock.Lock()
 	defer coreConfig.lock.Unlock()
 	coreConfig.conf = c
-
-	signal.Notify(refreshEvent, syscall.SIGUSR1)
 
 	return nil
 }
