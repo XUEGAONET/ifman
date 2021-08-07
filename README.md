@@ -15,6 +15,12 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 
 请阅读注意内容，再使用该工具。
 
+### 操作系统要求
+
+* 一定要是Linux！Windows和UNIX一定是不行的！
+* Linux内核要求5.6（包含5.6）及其以上版本，推荐RHEL系列的发行版使用elrepo
+* 对于Overlay类型，请在安装后检查防火墙是否放行
+
 ### Issue相关
 
 **开Issue提bug时请务必提交日志，无日志情况下有些问题无法处理~**
