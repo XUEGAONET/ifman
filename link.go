@@ -284,6 +284,7 @@ func checkAndRebuildWireGuard(link Link) error {
 	}
 
 	var conf *wgtypes.Config
+	var needFix = false
 
 	switch l := link.(type) {
 	case *WireGuardPtPServer:
@@ -292,6 +293,8 @@ func checkAndRebuildWireGuard(link Link) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
+			needFix = true
 		}
 	case *WireGuardPtPClient:
 		if wgCurrent.PrivateKey.String() != l.Private {
@@ -299,14 +302,18 @@ func checkAndRebuildWireGuard(link Link) error {
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
+			needFix = true
 		}
 	default:
 		return errors.WithStack(fmt.Errorf("unsupport check and rebuild wireguard type"))
 	}
 
-	err = cli.ConfigureDevice(link.GetBaseAttrs().Name, *conf)
-	if err != nil {
-		return errors.WithStack(err)
+	if needFix {
+		err = cli.ConfigureDevice(link.GetBaseAttrs().Name, *conf)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 	}
 
 	return nil
