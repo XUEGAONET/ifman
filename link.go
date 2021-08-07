@@ -229,6 +229,27 @@ func UpdateLink(link Link) error {
 	switch l := link.(type) {
 	case *Dummy:
 	case *Bridge:
+		nlBr, ok := nLink.(*netlink.Bridge)
+		if !ok {
+			err = rebuildLink(link, nLink)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
+
+		if *nlBr.MulticastSnooping != l.MulticastSnoopingOn {
+			err = rebuildLink(link, nLink)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
+
+		if *nlBr.VlanFiltering != l.VlanFilteringOn {
+			err = rebuildLink(link, nLink)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
 	case *IPTun:
 	case *Unmanaged:
 	case *Tun:
@@ -264,6 +285,23 @@ func UpdateLink(link Link) error {
 	}
 
 	err = updateBase(link, nLink)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func rebuildLink(link Link, nl netlink.Link) error {
+	logrus.Warnf("current link %s is not as expected, go to rebuild", link.GetBaseAttrs().Name)
+	logrus.Debugf("current: %#v, want: %#v", nl, link)
+
+	err := netlink.LinkDel(nl)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = NewLink(link)
 	if err != nil {
 		return errors.WithStack(err)
 	}
