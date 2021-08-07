@@ -109,3 +109,44 @@ func compareBridge(link Link) error {
 
 	return nil
 }
+
+func TestVlanNew(t *testing.T) {
+	logrus.SetLevel(logrus.TraceLevel)
+
+	link := Vlan{
+		BaseLink: BaseLink{
+			LinkUp:     true,
+			Name:       "vlan-test",
+			TxQueueLen: 512,
+			Mtu:        1500,
+			MasterName: "",
+			Mac:        "",
+		},
+		VlanId:     10,
+		StackingOn: true,
+		BindLink:   "eth0",
+	}
+
+	err := NewLink(&link)
+	if err != nil {
+		panic(err)
+	}
+
+	nl, err := netlink.LinkByName(link.Name)
+	if err != nil {
+		panic(err)
+	}
+
+	nlVl := nl.(*netlink.Vlan)
+	if nlVl.VlanProtocol != netlink.VLAN_PROTOCOL_8021AD {
+		panic("stacking")
+	}
+
+	if nlVl.VlanId != 10 {
+		panic("vlan id")
+	}
+
+	defer func() {
+		_ = netlink.LinkDel(nl)
+	}()
+}

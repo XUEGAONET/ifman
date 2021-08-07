@@ -89,6 +89,14 @@ func NewLink(link Link) error {
 			VlanProtocol: netlink.VLAN_PROTOCOL_8021Q,
 		}
 
+		if l.BindLink != "" {
+			bind, err := netlink.LinkByName(l.BindLink)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			nLink.Attrs().ParentIndex = bind.Attrs().Index
+		}
+
 		if l.StackingOn {
 			nLink.(*netlink.Vlan).VlanProtocol = netlink.VLAN_PROTOCOL_8021AD
 		}
@@ -254,6 +262,19 @@ func UpdateLink(link Link) error {
 	case *Unmanaged:
 	case *Tun:
 	case *Vlan:
+		if l.BindLink != "" {
+			bind, err := netlink.LinkByName(l.BindLink)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			if bind.Attrs().Index != nLink.Attrs().ParentIndex {
+				err = rebuildLink(link, nLink)
+				if err != nil {
+					return errors.WithStack(err)
+				}
+			}
+		}
 	case *Vrf:
 	case *VxLAN:
 	case *WireGuardPtPServer:
@@ -326,6 +347,15 @@ func checkAndRebuildWireGuard(link Link) error {
 
 	switch l := link.(type) {
 	case *WireGuardPtPServer:
+		if wgCurrent.ListenPort != int(l.ListenPort) {
+			conf, err = wgServerConf(l.PeerPublic, l.Private, int(l.ListenPort))
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			needFix = true
+		}
+
 		if wgCurrent.PrivateKey.String() != l.Private {
 			conf, err = wgServerConf(l.PeerPublic, l.Private, int(l.ListenPort))
 			if err != nil {

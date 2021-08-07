@@ -55,6 +55,7 @@ type Tun struct {
 type Vlan struct {
 	BaseLink `yaml:",inline"`
 
+	BindLink   string `yaml:"bind_link"`
 	VlanId     uint16 `yaml:"vlan_id"`
 	StackingOn bool   `yaml:"stacking_on"`
 }
