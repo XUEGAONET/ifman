@@ -66,6 +66,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    bind_link: "eth0"
     mac: 94:94:26:a7:c8:11
     vlan_id: 10
     stacking_on: false
