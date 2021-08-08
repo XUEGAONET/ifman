@@ -22,7 +22,6 @@
 package rpf
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -36,19 +35,36 @@ func TestRead(t *testing.T) {
 		panic(err)
 	}
 
-	fmt.Println(mode)
-}
-
-func TestWrite(t *testing.T) {
-	err := Write(name, RPF_LOOSE)
+	err = Write(name, RPF_LOOSE)
 	if err != nil {
 		panic(err)
 	}
-}
 
-func TestCheckAndFix(t *testing.T) {
-	err := CheckAndFix(name, RPF_STRICT)
+	loose, err := Read(name)
 	if err != nil {
 		panic(err)
+	}
+
+	if loose != RPF_LOOSE {
+		panic("loose")
+	}
+
+	err = CheckAndFix(name, RPF_STRICT)
+	if err != nil {
+		panic(err)
+	}
+
+	strict, err := Read(name)
+	if err != nil {
+		panic(err)
+	}
+
+	if strict != RPF_STRICT {
+		panic("strict")
+	}
+
+	err = Write(name, mode)
+	if err != nil {
+		panic("write")
 	}
 }
