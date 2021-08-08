@@ -292,24 +292,28 @@ func UpdateLink(link Link) error {
 	case *Vrf:
 	case *VxLAN:
 	case *WireGuardPtPServer:
-		pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
-		if err != nil {
-			return errors.WithStack(err)
+		if l.KeyChain != "" {
+			pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			l.Private = pri
+			l.PeerPublic = pub
 		}
-		l.Private = pri
-		l.PeerPublic = pub
 
 		err = checkAndRebuildWireGuard(l)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 	case *WireGuardPtPClient:
-		pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
-		if err != nil {
-			return errors.WithStack(err)
+		if l.KeyChain != "" {
+			pri, pub, err := DecodeWireGuardKeyChain(l.KeyChain)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			l.Private = pri
+			l.PeerPublic = pub
 		}
-		l.Private = pri
-		l.PeerPublic = pub
 
 		err = checkAndRebuildWireGuard(l)
 		if err != nil {
