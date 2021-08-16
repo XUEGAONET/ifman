@@ -20,6 +20,7 @@ interface:
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:ee
+    comment: ""
     multicast_snooping_on: true
     vlan_filtering_on: true
 
@@ -30,6 +31,7 @@ interface:
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
 
   - type: iptun
     name: ipip0
@@ -37,6 +39,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     ttl: 16
     tos: 7
     local_ip: 1.1.1.1
@@ -48,6 +51,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
 
   - type: tun
     name: tun0
@@ -55,7 +59,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
-    mac: 94:94:26:a7:c8:11
+    comment: ""
     multi_queue_on: true
     persist_on: true
     queues: 8
@@ -68,6 +72,7 @@ interface:
     master_name: ""
     bind_link: "eth0"
     mac: 94:94:26:a7:c8:11
+    comment: ""
     vlan_id: 10
     stacking_on: false
 
@@ -78,6 +83,7 @@ interface:
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
     table_id: 200
 
   - type: vxlan
@@ -87,6 +93,7 @@ interface:
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
     vni: 1000
     src_ip: 1.1.1.1
     dst_ip: 2.2.2.2
@@ -104,6 +111,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     listen_port: 10000
     private: your_key
     peer_public: peer_key
@@ -115,6 +123,7 @@ interface:
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     endpoint: 1.1.1.1:6666
     heartbeat_interval: 10
     private: your_key

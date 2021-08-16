@@ -27,6 +27,7 @@ type BaseLink struct {
 	Mtu        uint16 `yaml:"mtu"`
 	MasterName string `yaml:"master_name"`
 	Mac        string `yaml:"mac"`
+	Comment    string `yaml:"comment"`
 }
 
 func (receiver *BaseLink) GetBaseAttrs() *BaseLink {

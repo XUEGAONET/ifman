@@ -124,6 +124,7 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
 ```
 
 | 字段名称     | 内容释义     | 数据类型 | 其他                                                         |
@@ -132,8 +133,9 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 | link_up      | 接口状态     | bool     | 接口UP（true）或者DOWN（false）                              |
 | tx_queue_len | 发送队列长度 | uint16   | 建议根据接口业务类型调整，吞吐量优先可加大到4096，转发速度优先可减小到128，或者再适当调小（暂时没测试最小值）。为空（即为0）则由系统自动设置 |
 | mtu          | MTU          | uint16   | 为空（即为0）则由系统自动设置                                |
-| master_name  | 父接口名     | string   | 即接口的Parent接口名。为空需要使用""，即为无父接口           |
+| master_name  | 父接口名     | string   | 即接口的Parent接口名。该参数为空字符串时，表示无父接口，配置核查会强制重设其为无父接口           |
 | mac          | MAC地址      | string   | 该项目在Unmanaged和Layer3类型的接口中不会生效，会始终忽略。为空则由系统自动生成 |
+| comment      | 备注      | string   | 程序不会使用该字段，可填可不填。主要用于后期自动覆盖配置文件时，防止丢失#写的注释 |
 
 ####  bridge
 
@@ -147,6 +149,7 @@ Layer2类型接口
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:ee
+    comment: ""
     multicast_snooping_on: false
     vlan_filtering_on: true
 ```
@@ -168,6 +171,7 @@ Layer2类型接口
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
 ```
 
 #### iptun
@@ -181,6 +185,7 @@ Layer2类型接口
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     ttl: 16
     tos: 7
     local_ip: 1.1.1.1
@@ -207,6 +212,7 @@ Layer2类型接口
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
 ```
 
 ####  tun
@@ -220,6 +226,7 @@ Layer3类型接口
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     multi_queue_on: true
     persist_on: true
     queues: 8
@@ -244,6 +251,7 @@ Layer2类型接口
     master_name: ""
     bind_link: "eth0"
     mac: 94:94:26:a7:c8:11
+    comment: ""
     vlan_id: 10
     stacking_on: false
 ```
@@ -266,6 +274,7 @@ Layer2类型接口
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
     table_id: 200
 ```
 
@@ -285,6 +294,7 @@ Layer2类型接口
     mtu: 1500
     master_name: ""
     mac: 94:94:26:a7:c8:11
+    comment: ""
     vni: 1000
     src_ip: 1.1.1.1
     dst_ip: 2.2.2.2
@@ -323,6 +333,7 @@ Layer3类型接口
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     listen_port: 10000
     private: your_key
     peer_public: peer_key
@@ -347,6 +358,7 @@ Layer3类型接口
     tx_queue_len: 1024
     mtu: 1500
     master_name: ""
+    comment: ""
     endpoint: 1.1.1.1:6666
     heartbeat_interval: 10
     private: your_key
