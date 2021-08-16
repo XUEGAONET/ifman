@@ -22,7 +22,7 @@ import (
 
 var (
 	// global version
-	version string = "v2.0.2"
+	version string = "v2.0.3"
 )
 
 // global config
