@@ -25,22 +25,22 @@ import (
 func Read(name string) (RPFType, error) {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
-		return 0, err
+		return RPF_NONE, err
 	}
 
 	f, err := os.Open("/proc/sys/net/ipv4/conf/" + link.Attrs().Name + "/rp_filter")
 	if err != nil {
-		return 0, err
+		return RPF_NONE, err
 	}
 	defer f.Close()
 
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		return 0, err
+		return RPF_NONE, err
 	}
 
 	if len(content) == 0 {
-		return 0, errors.New("no content in rp_filter proc file")
+		return RPF_NONE, errors.New("no content in rp_filter proc file")
 	}
 
 	value := content[0]
@@ -52,6 +52,6 @@ func Read(name string) (RPFType, error) {
 	case 0x32: // 2
 		return RPF_LOOSE, nil
 	default:
-		return 0, errors.New("invalid rp_filter mode")
+		return RPF_NONE, errors.New("invalid rp_filter mode")
 	}
 }

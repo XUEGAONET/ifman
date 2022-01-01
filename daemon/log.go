@@ -16,33 +16,37 @@ package main
 
 import (
 	"fmt"
-	rpfp "github.com/XUEGAONET/ifman/utils/rpf"
+	"github.com/XUEGAONET/ifman/common"
+	"github.com/XUEGAONET/ifman/pkg/log"
+	"github.com/XUEGAONET/ifman/pkg/log/writer"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"strings"
 )
 
-type RpFilter struct {
-	Name string `yaml:"name"`
-	Mode string `yaml:"mode"`
-}
+func initLogger(logger *common.Logger) error {
+	var mode log.Writer = nil
+	var err error = nil
 
-func UpdateRpFilter(rpf *RpFilter) error {
-	logrus.Debugf("update rp_filter: %#v", rpf)
-
-	var want rpfp.RPFType
-
-	switch rpf.Mode {
-	case "off":
-		want = rpfp.RPF_NONE
-	case "strict":
-		want = rpfp.RPF_STRICT
-	case "loose":
-		want = rpfp.RPF_LOOSE
+	switch strings.ToLower(logger.Mode) {
+	case "none":
+		mode = writer.NewNone()
+	case "rotate":
+		mode, err = writer.NewRotate(logger.Rotate.Dir, int(logger.Rotate.MaxAgeSec), int(logger.Rotate.PeriodSec))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	case "single":
+		mode, err = writer.NewSingle(logger.Single.Path, logger.Single.Permit)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	case "stdout":
+		mode = writer.NewStdout()
 	default:
-		return errors.WithStack(fmt.Errorf("unsupported rp_filter mode"))
+		return fmt.Errorf("unsupported logger mode")
 	}
 
-	err := rpfp.CheckAndFix(rpf.Name, want)
+	err = log.SetLog(logger.Level, mode)
 	if err != nil {
 		return errors.WithStack(err)
 	}

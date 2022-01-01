@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/XUEGAONET/ifman/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
@@ -25,8 +26,8 @@ import (
 func TestBridgeNew(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := Bridge{
-		BaseLink: BaseLink{
+	link := common.Bridge{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "br-test1",
 			TxQueueLen: 512,
@@ -54,8 +55,8 @@ func TestBridgeNew(t *testing.T) {
 func TestBridgeStaticAttrFix(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := Bridge{
-		BaseLink: BaseLink{
+	link := common.Bridge{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "br-test2",
 			TxQueueLen: 512,
@@ -105,7 +106,7 @@ func TestBridgeStaticAttrFix(t *testing.T) {
 	_ = netlink.LinkDel(nl)
 }
 
-func compareBridge(link Link) error {
+func compareBridge(link common.Link) error {
 	nl, err := netlink.LinkByName(link.GetBaseAttrs().Name)
 	if err != nil {
 		return errors.WithStack(err)
@@ -113,11 +114,11 @@ func compareBridge(link Link) error {
 
 	nlBr := nl.(*netlink.Bridge)
 
-	if *nlBr.MulticastSnooping != link.(*Bridge).MulticastSnoopingOn {
+	if *nlBr.MulticastSnooping != link.(*common.Bridge).MulticastSnoopingOn {
 		return fmt.Errorf("multicast snooping")
 	}
 
-	if *nlBr.VlanFiltering != link.(*Bridge).VlanFilteringOn {
+	if *nlBr.VlanFiltering != link.(*common.Bridge).VlanFilteringOn {
 		return fmt.Errorf("vlan filter")
 	}
 
@@ -125,8 +126,8 @@ func compareBridge(link Link) error {
 }
 
 func TestIPTunNew(t *testing.T) {
-	link := IPTun{
-		BaseLink: BaseLink{
+	link := common.IPTun{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "ipip-test",
 			TxQueueLen: 1500,
@@ -177,8 +178,8 @@ func TestIPTunNew(t *testing.T) {
 func TestVlanNew(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := Vlan{
-		BaseLink: BaseLink{
+	link := common.Vlan{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "vlan-test",
 			TxQueueLen: 512,
@@ -239,8 +240,8 @@ func TestVlanNew(t *testing.T) {
 func TestVrfNew(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := Vrf{
-		BaseLink: BaseLink{
+	link := common.Vrf{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "vrf-test",
 			TxQueueLen: 1500,
@@ -274,8 +275,8 @@ func TestVrfNew(t *testing.T) {
 func TestVxlanNewRemoteIP(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := VxLAN{
-		BaseLink: BaseLink{
+	link := common.VxLAN{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "vxlan-test",
 			TxQueueLen: 128,
@@ -315,8 +316,8 @@ func TestVxlanNewRemoteIP(t *testing.T) {
 func TestVxlanNewVtep(t *testing.T) {
 	logrus.SetLevel(logrus.TraceLevel)
 
-	link := VxLAN{
-		BaseLink: BaseLink{
+	link := common.VxLAN{
+		BaseLink: common.BaseLink{
 			LinkUp:     true,
 			Name:       "vxlan-test2",
 			TxQueueLen: 128,

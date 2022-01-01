@@ -15,6 +15,7 @@
 package main
 
 import (
+	"github.com/XUEGAONET/ifman/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -23,45 +24,13 @@ import (
 	"sync"
 )
 
-type Config struct {
-	Logger    Logger        `yaml:"logger"`
-	Interface []interface{} `yaml:"interface"`
-	Addr      []Addr        `yaml:"addr"`
-	RpFilter  []RpFilter    `yaml:"rp_filter"`
-	Learning  []Learning    `yaml:"learning"`
-	Common    Common        `yaml:"common"`
-}
-
-type Common struct {
-	CheckPeriodSec uint16 `yaml:"check_period_sec"`
-}
-
-type Logger struct {
-	Mode     string `yaml:"mode"`
-	Level    string `yaml:"level"`
-	SyslogOn bool   `yaml:"syslog_on"`
-	Single   Single `yaml:"single"`
-	Rotate   Rotate `yaml:"rotate"`
-}
-
-type Rotate struct {
-	Dir       string `yaml:"dir"`
-	MaxAgeSec uint32 `yaml:"max_age_sec"`
-	PeriodSec uint32 `yaml:"period_sec"`
-}
-
-type Single struct {
-	Path   string `yaml:"path"`
-	Permit int    `yaml:"permit"`
-}
-
-func parseLocalConfig(path string) (*Config, error) {
+func parseLocalConfig(path string) (*common.Config, error) {
 	b, err := readFile(path)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	c := Config{}
+	c := common.Config{}
 	err = yaml.Unmarshal(b, &c)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -80,39 +49,41 @@ func readFile(path string) ([]byte, error) {
 	return ioutil.ReadAll(f)
 }
 
-type DynamicConfig struct {
-	conf *Config
+type dynamicConfig struct {
+	conf *common.Config
 	path string
 	lock sync.RWMutex
 }
 
-var coreConfig DynamicConfig
+var _globalConfig dynamicConfig
 
-func getCoreConfig() *Config {
-	coreConfig.lock.RLock()
-	defer coreConfig.lock.RUnlock()
+// getGlobalConfig 会返回现有配置。
+// 当配置未被初始化时，会返回空指针。为防止异常，请在使用该函数前先进行初始化操作。
+func getGlobalConfig() *common.Config {
+	_globalConfig.lock.RLock()
+	defer _globalConfig.lock.RUnlock()
 
-	return coreConfig.conf
+	return _globalConfig.conf
 }
 
-func refreshCoreConfig() error {
-	coreConfig.lock.Lock()
-	defer coreConfig.lock.Unlock()
+func reloadGlobalConfig() error {
+	_globalConfig.lock.Lock()
+	defer _globalConfig.lock.Unlock()
 
-	c, err := parseLocalConfig(coreConfig.path)
+	c, err := parseLocalConfig(_globalConfig.path)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	coreConfig.conf = c
+	_globalConfig.conf = c
 
-	logrus.Infof("core config refreshed")
+	logrus.Infof("global config reloaded")
 
 	return nil
 }
 
-func initCoreConfig(path string) error {
-	coreConfig = DynamicConfig{
+func initGlobalConfig(path string) error {
+	_globalConfig = dynamicConfig{
 		conf: nil,
 		path: path,
 		lock: sync.RWMutex{},
@@ -123,9 +94,9 @@ func initCoreConfig(path string) error {
 		return errors.WithStack(err)
 	}
 
-	coreConfig.lock.Lock()
-	defer coreConfig.lock.Unlock()
-	coreConfig.conf = c
+	_globalConfig.lock.Lock()
+	defer _globalConfig.lock.Unlock()
+	_globalConfig.conf = c
 
 	return nil
 }

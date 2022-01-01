@@ -12,30 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log
+package main
 
 import (
-	"github.com/sirupsen/logrus"
-	lSyslog "github.com/sirupsen/logrus/hooks/syslog"
+	"flag"
+	"github.com/XUEGAONET/ifman/common"
+	"log"
 )
 
-// Calling must be after logrus initing
-func enableSyslog() error {
-	levelLevel, err := Logrus2Level(int(logrus.GetLevel()))
+func main() {
+	// config variable
+	var (
+		configFile string
+	)
+
+	flag.StringVar(&configFile, "config", "config.yaml", "yaml config path")
+	flag.Parse()
+
+	// init dynamic core config
+	err := initGlobalConfig(configFile)
 	if err != nil {
-		return nil
+		log.Fatalln(err)
 	}
 
-	syslogLevel, err := Level2Syslog(levelLevel)
+	// get newest global config and init logger
+	conf := getGlobalConfig()
+	err = initLogger(&conf.Logger)
 	if err != nil {
-		return nil
+		log.Fatalln(err)
 	}
 
-	hook, err := lSyslog.NewSyslogHook("", "", syslogLevel, "ifman")
+	// listen socket
+	_, err = NewGrpcServer(uint16(common.GrpcPort))
 	if err != nil {
-		return err
+		log.Fatalln(err)
 	}
 
-	logrus.AddHook(hook)
-	return nil
+	// start core service
+	err = startService()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 }

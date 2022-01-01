@@ -2,14 +2,11 @@
 
 ifman全称Interface Manager，用于管理Linux系统的接口及其相关功能。支持配合核查与自动修复
 
-## 模块
+## 组件
 
-目前ifman支持了如下模块，这些模块均为独立的，在运行时通过控制台参数选择要使用的模块，具体的参数请通过参数`-h`查看。
+目前ifman拆分为了两个组件，一个为ctl，一个为daemon。
 
-* **test** - 配置测试模块，用于检查新配置是否能够正常解析。该模块仅仅检查语法错误，无法检查值是否合法，无法检查是否漏掉了某个值
-* **core** - 核心服务模块，用于支持接口配置、核查和自动修复。该模块建议由systemd托管运行
-* **key** - WireGuard的Key Chain生成器模块。该模块会生成两个KeyChain，在客户端和服务端的WireGuard PtP接口上任意配置其一即可，无需再单独生成私钥公钥去交叉配置
-* **reload** - 配置重载通知模块。该模块会向已经运行的ifman进程发送消息，通知其刷新配置文件
+其中，daemon为通过服务拉起的、始终在后台运行的程序；ctl外部独立的工具包，用于向daemon发送信息或者进行与daemon逻辑无关的操作。
 
 ## 注意
 
@@ -18,7 +15,7 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 ### 操作系统要求
 
 * 一定要是Linux！Windows和UNIX一定是不行的！
-* Linux内核要求5.6（包含5.6）及其以上版本，推荐RHEL系列的发行版使用elrepo
+* Linux内核要求5.6（包含5.6）及其以上版本，推荐RHEL系列的发行版使用elrepo。低版本的内核请安装WireGuard内核kmod
 * 对于Overlay类型，请在安装后检查防火墙是否放行
 
 ### Issue相关
@@ -41,7 +38,7 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 * 主接口名
 * MAC地址
 
-其中，Layer3接口自动忽略MAC地址属性（Unmanaged归属于Layer3接口），Layer2接口全部支持。
+其中，Layer3接口自动忽略MAC地址属性（Generic归属于Layer3接口），Layer2接口全部支持。
 
 目前，静态配置的核查和修复仅为小部分接口支持，静态配置核查不通过会直接重建接口。具体支持静态配置核查的接口如下：
 
@@ -57,17 +54,12 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 * 请留意，不要在配置文件后出现多余的空格，暂时不确定会不会有潜在的问题
 * 地址以接口为单位，核查时按照每个接口依次检查和修复
 * 配置reload仅支持interface、addr、rp_filter、learning部分重载，其他部分暂不支持
-* 配置reload生效需要等待下一次核查时生效
+* 配置reload生效需要等待下一次核查时生效，或者也可以用过ctl手动触发（recheck）
 * ifman不存在删除接口的调用。因此，请注意，假设配置中原接口名为vxlan0，其VNI配置为10，当修改该名称为vxlan1之后（其他配置不变），那么ifman核查时会认为vxlan1接口不存在，需要新建，而不会再去管原本的vxlan0接口。这时，由于系统中已经存在同样VNI的接口，因此vxlan1会创建失败
 * 当接口不存在时，新建接口操作后还会追加一次强制配置核查，以检查额外配置项并进行修复。好比WireGuard接口，New的时候是仅创建了接口，但是Peer并没有创建，直到强制执行配置核查的时，Update检查到没有Peer配置，才会进行Peer安装
 * 如果使用了KeyChain（即KeyChain不为空字符串），即便是指定了Public Key和Private Key，也仍然会去解析KeyChain并使用解析结果覆盖Public Key和Private Key
 * 当字段使用默认值时（如MTU为0、MAC保持为空等），配置核查将会跳过这些字段
-
-### 开发相关
-
-* 如添加新的Link支持，在完成NewLink()和UpdateLink()更新后，请记得同时改动如下部分：
-    * module_core.go - getLinkFromYaml()
-    * link_type.go - getLinkType()
+* 请勿对WireGuardOrigin的Peer使用相同的密钥对，由于WireGuard的加密实现原理，相同的密钥对会判定为同一个Endpoint，会造成问题
 
 ## 使用指引
 
@@ -82,8 +74,6 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
 ```yaml
   mode: single
   level: debug
-  # 是否打开syslog的开关（输出到本地syslog）
-  syslog_on: true
 
   # 单文件日志模式
   single:
@@ -102,12 +92,11 @@ ifman全称Interface Manager，用于管理Linux系统的接口及其相关功�
     period_sec: 86400
 ```
 
-| 字段名称      | 内容释义   | 数据类型 | 其他                                                         |
-| ------------- | ---------- | -------- | ------------------------------------------------------------ |
+| 字段名称      | 内容释义   | 数据类型 | 其他                                                                                                  |
+| ------------- | ---------- | -------- |-----------------------------------------------------------------------------------------------------|
 | mode          | 日志模式   | string   | 支持模式：none/rotate/single/stdout。none模式为无输出；rotate模式为自动分割；single模式为单文件输出；stdout为直接输出到stdout上，比较适合容器场景 |
-| level         | 日志等级   | string   | trace/debug/info/warn/error/fatal                            |
-| syslog_on     | syslog开关 | bool     | 仅支持向本地syslog socket输出                                |
-| single/rotate | 模式设置   |          | 仅当使用该模式时才需要配置，否则可以不管                     |
+| level         | 日志等级   | string   | trace/debug/info/warning/error等，logrus等级字符                                                          |
+| single/rotate | 模式设置   |          | 仅当使用该模式时才需要配置，否则可以不管                                                                                |
 
 ### 接口 - interface
 
@@ -199,14 +188,14 @@ Layer2类型接口
 | local_ip  | 本地IP地址 | string   | 仅IP地址，无需填写端口号。请注意iptables放行ip-encap的包 |
 | remote_ip | 远端IP地址 | string   | 仅IP地址，无需填写端口号。请注意iptables放行ip-encap的包 |
 
-####  unmanaged
+####  generic
 
-非由ifman创建，但是需要被ifman进行配置核查的接口。名字可能有点奇怪
+非由ifman创建，但是需要被ifman进行配置核查的接口
 
-不论该接口为什么类型，程序始终认为其为Layer3类型
+不论该接口为什么类型，程序始终认为其为Layer3类型，并且不会进行新建操作
 
 ```yaml
-  - type: unmanaged
+  - type: generic
     name: eth0
     link_up: true
     tx_queue_len: 1024
@@ -300,6 +289,7 @@ Layer2类型接口
     dst_ip: 2.2.2.2
     ttl: 16
     tos: 7
+    checksum: false
     learning_on: false
     src_port_low: 10240
     src_port_high: 40960
@@ -307,18 +297,19 @@ Layer2类型接口
     vtep_name: eth0
 ```
 
-| 字段名称      | 内容释义         | 数据类型 | 其他                                                         |
-| ------------- | ---------------- | -------- | ------------------------------------------------------------ |
-| vni           | VXLAN ID         | uint32   |                                                              |
-| src_ip        | 本地IP地址       | string   | 可与vtep_name二选一填写                                      |
-| dst_ip        | 远端IP地址       | string   | 做VTEP用时此项可填写`0.0.0.0/0`                              |
-| ttl           | TTL              | uint8    | 为空则由系统自动生成                                         |
-| tos           | TOS              | uint8    | 为空则由系统自动生成                                         |
-| learning_on   | MAC Learning开关 | bool     | 只是决定VXLAN接口内置的MAC Learning是否开启，与Bridge Port的学习无关 |
+| 字段名称      | 内容释义         | 数据类型 | 其他                                                                    |
+| ------------- | ---------------- | -------- |-----------------------------------------------------------------------|
+| vni           | VXLAN ID         | uint32   |                                                                       |
+| src_ip        | 本地IP地址       | string   | 可与vtep_name二选一填写                                                      |
+| dst_ip        | 远端IP地址       | string   | 做VTEP用时此项可填写`0.0.0.0/0`                                               |
+| ttl           | TTL              | uint8    | 为空则由系统自动生成                                                            |
+| tos           | TOS              | uint8    | 为空则由系统自动生成                                                            |
+| checksum | UDP校验和 | bool | 是否启用VxLAN UDP的校验和                                                     |
+| learning_on   | MAC Learning开关 | bool     | 只是决定VXLAN接口内置的MAC Learning是否开启，与Bridge Port的学习无关                      |
 | src_port_low  | 源端口范围       | uint16   | 请注意，当源端口范围过大时，VTEP如果启用了连接跟踪则可能会导致conntrack表爆表的问题。但是端口范围大时可以提高ECMP的随机度 |
-| src_port_high | 源端口范围       | uint16   | 同上                                                         |
-| port          | 端口号           | uint16   | 端口，建议4789                                               |
-| vtep_name     | 绑定的接口名称   | string   | 物理接口名称，即VXLAN接口绑定的上游接口。可与`src_ip`二选一填写。 |
+| src_port_high | 源端口范围       | uint16   | 同上                                                                    |
+| port          | 端口号           | uint16   | 端口，建议4789                                                             |
+| vtep_name     | 绑定的接口名称   | string   | 物理接口名称，即VXLAN接口绑定的上游接口。可与`src_ip`二选一填写。                               |
 
 #### wireguard_ptp_server
 
@@ -374,13 +365,45 @@ Layer3类型接口
 | peer_public        | 公钥（远端）    | string   | WireGuard的标准Key                                           |
 | key_chain          | 密码链          | string   | 当指定该字段时，private与peer_public则自动失效。可以通过key模块生成 |
 
+#### wireguard_origin
+
+原始的WireGuard配置，需要自行根据类型（服务端/客户端）设置或者置空某些参数。
+
+Layer3类型接口
+
+```yaml
+  - type: wireguard_origin
+    name: wg0
+    link_up: true
+    tx_queue_len: 1024
+    mtu: 1500
+    master_name: ""
+    comment: ""
+    listen_port: 8000
+    private: your_key
+    peers:
+      - peer_public: peer_key
+        allowed_cidr:
+          - 192.168.1.2/32
+        endpoint: 1.1.1.1:6666
+        heartbeat_interval: 10
+```
+
+| 字段名称           | 内容释义      | 数据类型 | 其他                        |
+| ------------------ |-----------| -------- |---------------------------|
+| endpoint           | 目的地址（UDP） | string   | 带端口号，如1.1.1.1:3333        |
+| heartbeat_interval | 心跳周期（秒）   | uint32   | 用于保持长连接，存在NAT时建议设置为5s或者更短 |
+| private            | 私钥（本地）    | string   | WireGuard的标准Key           |
+| peer_public        | 公钥（远端）    | string   | WireGuard的标准Key           |
+| allowed_cidr          | 允许的IP地址块  | string   | 必须填写                      |
+
 ### 地址 - addr
 
 地址配置需要填写在配置文件的addr块中
 
 IP地址核查如果发现问题的话，会直接删除当前的地址并且重新安装地址
 
-**目前IP地址暂没有进行IPv6的验证，如有问题请先开Issue，晚些时候会集中处理**
+**目前IP地址暂没有进行IPv6的验证**
 
 ```yaml
   - name: eth0

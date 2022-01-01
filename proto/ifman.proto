@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+import "google/protobuf/empty.proto";
+package proto;
+
+service Ifman {
+  rpc ReloadConfig (google.protobuf.Empty) returns (ReloadResponse) {}
+  rpc Recheck(google.protobuf.Empty) returns (RecheckResponse) {}
+}
+
+message ReloadResponse {
+  string status = 1;
+  string message = 2;
+}
+
+message RecheckResponse {
+  string status = 1;
+  string message = 2;
+}

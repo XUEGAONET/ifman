@@ -12,4 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package rpf
+
+type RPFType string
+type IPVersion uint8
+
+const (
+	RPF_NONE   RPFType = "off"
+	RPF_STRICT RPFType = "strict"
+	RPF_LOOSE  RPFType = "loose"
+)
+
+// TODO: support ipv6 rp_filter control
+const (
+	IPV4 IPVersion = 4
+	IPV6 IPVersion = 6
+)

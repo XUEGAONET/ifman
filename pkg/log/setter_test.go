@@ -48,7 +48,7 @@ func TestRotateWriter(t *testing.T) {
 }
 
 func setWriterAndGenMessage(w Writer) {
-	err := SetLog("trace", w, false)
+	err := SetLog("trace", w)
 	if err != nil {
 		panic(err)
 	}

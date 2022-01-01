@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package addr
 
 import (
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"net"
 )
 
-type Addr struct {
-	Name       string `yaml:"name"`
-	Address    string `yaml:"address"`
-	PtpMode    bool   `yaml:"ptp_mode"`
-	PeerPrefix string `yaml:"peer_prefix"`
-}
-
-func NewAddr(addr *Addr) error {
-	logrus.Debugf("new addr: %#v", addr)
-
-	link, err := netlink.LinkByName(addr.Name)
+// New 添加新地址。
+// 当地址存在时，添加操作会失败。
+func New(name string, addr string, ptp bool, peer string) error {
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -48,7 +40,7 @@ func NewAddr(addr *Addr) error {
 	}
 
 	// ip address
-	ip, ipNet, err := net.ParseCIDR(addr.Address)
+	ip, ipNet, err := net.ParseCIDR(addr)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -56,8 +48,8 @@ func NewAddr(addr *Addr) error {
 	nlAddr.IPNet = ipNet
 
 	// ptp mode
-	if addr.PtpMode {
-		_, cidr, err := net.ParseCIDR(addr.PeerPrefix)
+	if ptp {
+		_, cidr, err := net.ParseCIDR(peer)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -70,16 +62,13 @@ func NewAddr(addr *Addr) error {
 		return errors.WithStack(err)
 	}
 
-	logrus.Debugf("new addr succeed")
 	return nil
 }
 
-// UpdateAddr will check and auto fix addr config
-// please check addr whether exist before use this call
-func UpdateAddr(addr *Addr) error {
-	logrus.Debugf("update addr: %#v", addr)
-
-	link, err := netlink.LinkByName(addr.Name)
+// Update 会检查并自动修复地址。
+// 仅仅会检查已经存在的地址的配置是否为预期，对于不存在的地址，会直接忽略。需要自行检查是否存在，并补齐。
+func Update(name string, addr string, ptp bool, peer string) error {
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -89,24 +78,28 @@ func UpdateAddr(addr *Addr) error {
 		return errors.WithStack(err)
 	}
 
-	for i, _ := range nlAddrs {
-		nlAddr := nlAddrs[i]
-
-		if nlAddr.IPNet.String() == addr.Address {
-			if addr.PtpMode {
+	for _, nlAddr := range nlAddrs {
+		// 找到指定的地址进行检查，没有的话就结束
+		if nlAddr.IPNet.String() == addr {
+			if ptp {
 				// ptp mode but peer not exist
 				if nlAddr.Peer == nil {
-					err = fixAddr(addr, &nlAddr)
-					if err != nil {
+					if err = deleteAddr(name, &nlAddr); err != nil {
 						return errors.WithStack(err)
 					}
 
+					if err = New(name, addr, ptp, peer); err != nil {
+						return errors.WithStack(err)
+					}
 				}
 
 				// ptp mode but peer not equal
-				if nlAddr.Peer.String() != addr.PeerPrefix {
-					err = fixAddr(addr, &nlAddr)
-					if err != nil {
+				if nlAddr.Peer.String() != peer {
+					if err = deleteAddr(name, &nlAddr); err != nil {
+						return errors.WithStack(err)
+					}
+
+					if err = New(name, addr, ptp, peer); err != nil {
 						return errors.WithStack(err)
 					}
 				}
@@ -114,12 +107,11 @@ func UpdateAddr(addr *Addr) error {
 		}
 	}
 
-	logrus.Debugf("update addr succeed")
 	return nil
 }
 
-func fixAddr(addr *Addr, nlAddr *netlink.Addr) error {
-	link, err := netlink.LinkByName(addr.Name)
+func deleteAddr(name string, nlAddr *netlink.Addr) error {
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -129,18 +121,13 @@ func fixAddr(addr *Addr, nlAddr *netlink.Addr) error {
 		return errors.WithStack(err)
 	}
 
-	err = NewAddr(addr)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	return nil
 }
 
-func IsAddrExist(addr *Addr) (bool, error) {
+func IsAddrExist(name string, addr string) (bool, error) {
 	res := false
 
-	link, err := netlink.LinkByName(addr.Name)
+	link, err := netlink.LinkByName(name)
 	if err != nil {
 		return res, errors.WithStack(err)
 	}
@@ -150,10 +137,8 @@ func IsAddrExist(addr *Addr) (bool, error) {
 		return res, errors.WithStack(err)
 	}
 
-	for i, _ := range nlAddrs {
-		nlAddr := nlAddrs[i]
-
-		if nlAddr.IPNet.String() == addr.Address {
+	for _, nlAddr := range nlAddrs {
+		if nlAddr.IPNet.String() == addr {
 			res = true
 		}
 	}

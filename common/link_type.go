@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package common
 
-import "github.com/vishvananda/netlink"
+import (
+	"github.com/vishvananda/netlink"
+)
+
+const (
+	LinkTypeLayer2 = iota
+	LinkTypeLayer3
+)
 
 type Link interface {
 	GetBaseAttrs() *BaseLink
@@ -54,8 +61,8 @@ type IPTun struct {
 	RemoteIP string `yaml:"remote_ip"`
 }
 
-// Unmanaged is a unmanaged link type
-type Unmanaged struct {
+// Generic is a common link type
+type Generic struct {
 	BaseLink `yaml:",inline"`
 }
 
@@ -89,6 +96,7 @@ type VxLAN struct {
 	DstIP       string `yaml:"dst_ip"`
 	Ttl         uint8  `yaml:"ttl"`
 	Tos         uint8  `yaml:"tos"`
+	Checksum    bool   `yaml:"checksum"`
 	LearningOn  bool   `yaml:"learning_on"`
 	SrcPortLow  uint16 `yaml:"src_port_low"`
 	SrcPortHigh uint16 `yaml:"src_port_high"`
@@ -117,6 +125,21 @@ type WireGuardPtPClient struct {
 	KeyChain string `yaml:"key_chain"`
 }
 
+type WireGuardOrigin struct {
+	BaseLink `yaml:",inline"`
+
+	ListenPort uint16                `yaml:"listen_port"`
+	Private    string                `yaml:"private"`
+	Peers      []WireGuardOriginPeer `yaml:"peers"`
+}
+
+type WireGuardOriginPeer struct {
+	PeerPublic        string   `yaml:"peer_public"`
+	AllowedCIDR       []string `yaml:"allowed_cidr"`
+	Endpoint          string   `yaml:"endpoint"`
+	HeartbeatInterval uint32   `yaml:"heartbeat_interval"`
+}
+
 type WireGuardLink struct {
 	netlink.LinkAttrs
 }
@@ -129,8 +152,7 @@ func (w *WireGuardLink) Type() string {
 	return "wireguard"
 }
 
-// getLinkType will change layer 3 feature only for unmanaged link
-func getLinkType(link Link) int {
+func GetLinkType(link Link) int {
 	switch link.(type) {
 	case *Bridge:
 		return LinkTypeLayer2
@@ -149,6 +171,8 @@ func getLinkType(link Link) int {
 	case *WireGuardPtPServer:
 		return LinkTypeLayer3
 	case *WireGuardPtPClient:
+		return LinkTypeLayer3
+	case *WireGuardOrigin:
 		return LinkTypeLayer3
 	default:
 		return LinkTypeLayer3

@@ -16,132 +16,134 @@ package main
 
 import (
 	"fmt"
+	"github.com/XUEGAONET/ifman/common"
+	pkgaddr "github.com/XUEGAONET/ifman/pkg/addr"
+	"github.com/XUEGAONET/ifman/pkg/learning"
+	"github.com/XUEGAONET/ifman/pkg/rpf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	netlink "github.com/vishvananda/netlink"
+	"github.com/vishvananda/netlink"
 	"gopkg.in/yaml.v3"
 	"strings"
 	"time"
 )
 
-func startCoreService() error {
-	ticker := make(chan struct{}, 1)
-	go func() {
-		c := getCoreConfig()
-		period := time.Duration(c.Common.CheckPeriodSec) * time.Second
+var recheckChan chan struct{}
 
-		for {
-			ticker <- struct{}{}
-			time.Sleep(period)
-		}
-	}()
+func startService() error {
+	recheckChan = make(chan struct{}, 1)
+
+	ticker := time.NewTicker(time.Duration(getGlobalConfig().Common.CheckPeriodSec) * time.Second)
 
 	for {
 		select {
-		case <-ticker:
-			conf := getCoreConfig()
+		case <-ticker.C:
+		case <-recheckChan:
+			logrus.Infoln("recheck signal received")
+		}
 
-			processAllLink(conf)
-			processAllRpFilter(conf)
-			processAllLearning(conf)
-			processAllAddr(conf)
+		conf := getGlobalConfig()
+		logrus.Tracef("get global config: %+v", conf)
+
+		processAllLink(conf.Interface)
+		processAllRpFilter(conf.RpFilter)
+		processAllLearning(conf.Learning)
+		processAllAddr(conf.Addr)
+	}
+}
+
+func processAllLearning(conf []common.Learning) {
+	var err error
+
+	logrus.Traceln("start to process all learning")
+
+	for _, c := range conf {
+		if c.LearningOn {
+			err = learning.SetLearningOn(c.Name)
+		} else {
+			err = learning.SetLearningOff(c.Name)
+		}
+
+		if err != nil {
+			logrus.Errorf("update learning failed: %v", err)
 		}
 	}
 }
 
-func processAllLearning(conf *Config) {
-	logrus.Infoln("start to process all learning")
+func processAllRpFilter(conf []common.RpFilter) {
+	var err error
 
-	for i, _ := range conf.Learning {
-		c := conf.Learning[i]
+	logrus.Traceln("start to process all rp_filter")
 
-		err := UpdateLearning(&c)
+	for _, c := range conf {
+		err = rpf.CheckAndFix(c.Name, rpf.RPFType(c.Mode))
 		if err != nil {
-			logrus.Errorf("update learning mode failed: %+v", err)
-			continue
+			logrus.Errorf("update rp_filter failed: %v", err)
 		}
 	}
 }
 
-func processAllRpFilter(conf *Config) {
-	logrus.Infoln("start to process all rp_filter")
+func processAllAddr(conf []common.Addr) {
+	logrus.Traceln("start to process all addr")
 
-	for i, _ := range conf.RpFilter {
-		c := conf.RpFilter[i]
-
-		err := UpdateRpFilter(&c)
+	for _, c := range conf {
+		exist, err := pkgaddr.IsAddrExist(c.Name, c.Address)
 		if err != nil {
-			logrus.Errorf("update rp_filter failed: %+v", err)
-			continue
-		}
-	}
-}
-
-func processAllAddr(conf *Config) {
-	logrus.Infoln("start to process all addr")
-
-	for i, _ := range conf.Addr {
-		c := conf.Addr[i]
-
-		exist, err := IsAddrExist(&c)
-		if err != nil {
-			logrus.Errorf("get addr exist status failed: %+v", err)
+			logrus.Errorf("get addr exist status failed: %v", err)
 			continue
 		}
 
 		if exist {
-			err = UpdateAddr(&c)
+			err = pkgaddr.Update(c.Name, c.Address, c.PtpMode, c.PeerPrefix)
 		} else {
-			err = NewAddr(&c)
+			err = pkgaddr.New(c.Name, c.Address, c.PtpMode, c.PeerPrefix)
 		}
 		if err != nil {
-			logrus.Errorf("update or new addr failed: %+v", err)
+			logrus.Errorf("update or new addr failed: %v", err)
 			continue
 		}
 	}
 }
 
-func processAllLink(conf *Config) {
-	logrus.Infoln("start to process all link")
+func processAllLink(conf []interface{}) {
+	logrus.Traceln("start to process all link")
 
-	for i, _ := range conf.Interface {
-		c := conf.Interface[i]
-
+	for _, c := range conf {
 		l, ok := c.(map[string]interface{})
 		if !ok {
-			logrus.Errorf("assert link config failed")
+			logrus.Errorf("assert custom link config failed")
 			continue
 		}
 
 		name, typ, err := getInfoFromLink(l)
 		if err != nil {
-			logrus.Errorf("get info from link failed: %+v", err)
+			logrus.Errorf("get info from link failed: %v", err)
 			continue
 		}
 
-		logrus.Infof("process %s:%s interface", typ, name)
+		logrus.Debugf("start process %s:%s interface", typ, name)
 
 		b, err := yaml.Marshal(c)
 		if err != nil {
-			logrus.Errorf("marshal one link config failed: %+v", err)
+			logrus.Errorf("marshal one link config failed: %v", err)
 			continue
 		}
 
 		newLink, err := getLinkFromYaml(typ, b)
 		if err != nil {
-			logrus.Errorf("get link from yaml failed: %+v", err)
+			logrus.Errorf("get link from yaml failed: %v", err)
 			continue
 		}
 
 		err = processOneLink(newLink)
 		if err != nil {
-			logrus.Errorf("process one link failed: %+v", err)
+			logrus.Errorf("process one link failed: %v", err)
 			continue
 		}
 	}
 }
 
-func processOneLink(link Link) error {
+func processOneLink(link common.Link) error {
 	_, err := netlink.LinkByName(link.GetBaseAttrs().Name)
 	if err != nil {
 		// link not exist
@@ -196,31 +198,36 @@ func getInfoFromLink(link map[string]interface{}) (string, string, error) {
 	return name, typ, nil
 }
 
-func getLinkFromYaml(typ string, b []byte) (Link, error) {
+// getLinkFromYaml 返回自定义的Link。
+// 传入自定义的类型、yaml的局部的内容。
+// 增加新类型时需要在此处添加。
+func getLinkFromYaml(typ string, b []byte) (common.Link, error) {
 	var err error = nil
-	var link Link = nil
+	var link common.Link = nil
 
 	switch strings.ToLower(typ) {
 	case "bridge":
-		link = &Bridge{}
+		link = &common.Bridge{}
 	case "dummy":
-		link = &Dummy{}
+		link = &common.Dummy{}
 	case "iptun":
-		link = &IPTun{}
-	case "unmanaged":
-		link = &Unmanaged{}
+		link = &common.IPTun{}
+	case "generic":
+		link = &common.Generic{}
 	case "tun":
-		link = &Tun{}
+		link = &common.Tun{}
 	case "vlan":
-		link = &Vlan{}
+		link = &common.Vlan{}
 	case "vrf":
-		link = &Vrf{}
+		link = &common.Vrf{}
 	case "vxlan":
-		link = &VxLAN{}
+		link = &common.VxLAN{}
 	case "wireguard_ptp_server":
-		link = &WireGuardPtPServer{}
+		link = &common.WireGuardPtPServer{}
 	case "wireguard_ptp_client":
-		link = &WireGuardPtPClient{}
+		link = &common.WireGuardPtPClient{}
+	case "wireguard_origin":
+		link = &common.WireGuardOrigin{}
 	default:
 		return nil, errors.WithStack(fmt.Errorf("unsopprted link type from yaml"))
 	}
