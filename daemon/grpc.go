@@ -49,10 +49,8 @@ func NewGrpcServer(port uint16) (*grpcServer, error) {
 
 	server := grpc.NewServer()
 	proto.RegisterIfmanServer(server, &s)
-	err = server.Serve(listener)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+
+	go server.Serve(listener)
 	s.server = server
 
 	return &s, nil

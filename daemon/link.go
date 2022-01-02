@@ -308,6 +308,7 @@ func UpdateLink(customLink common.Link) error {
 		}
 
 		if changed {
+			logrus.Debugf("wireguard device changed, go to rebuild")
 			err = rebuildWireGuard(c)
 			if err != nil {
 				return errors.WithStack(err)
@@ -329,13 +330,25 @@ func UpdateLink(customLink common.Link) error {
 		}
 
 		if changed {
+			logrus.Debugf("wireguard device changed, go to rebuild")
 			err = rebuildWireGuard(c)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 		}
 	case *common.WireGuardOrigin:
+		changed, err := isWireGuardChanged(c)
+		if err != nil {
+			return errors.WithStack(err)
+		}
 
+		if changed {
+			logrus.Debugf("wireguard device changed, go to rebuild")
+			err = rebuildWireGuard(c)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
 	default:
 		return errors.WithStack(fmt.Errorf("unsupport high level customLink type"))
 	}

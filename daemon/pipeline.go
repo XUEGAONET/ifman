@@ -32,6 +32,7 @@ var recheckChan chan struct{}
 
 func startService() error {
 	recheckChan = make(chan struct{}, 1)
+	recheckChan <- struct{}{}
 
 	ticker := time.NewTicker(time.Duration(getGlobalConfig().Common.CheckPeriodSec) * time.Second)
 
@@ -151,6 +152,8 @@ func processOneLink(link common.Link) error {
 		_, ok1 := err.(*netlink.LinkNotFoundError)
 		_, ok2 := err.(netlink.LinkNotFoundError)
 		if ok1 || ok2 {
+			logrus.Debugf("link not exist, go to create")
+
 			err = NewLink(link)
 			if err != nil {
 				return errors.WithStack(err)
@@ -165,6 +168,8 @@ func processOneLink(link common.Link) error {
 			return errors.Wrap(err, "process one link with unexpected error")
 		}
 	} else { // no error
+		logrus.Debugf("update link")
+
 		err = UpdateLink(link)
 		if err != nil {
 			return errors.WithStack(err)
