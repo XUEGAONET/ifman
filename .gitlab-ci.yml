@@ -1,22 +1,15 @@
 stages:
   - build
-  - test
 
 build-job:
   stage: build
   script:
-    - echo "Compiling the code..."
     - dnf makecache
     - dnf install golang -y
     - go build -o ./ifman-ctl ./ctl
     - go build -o ./ifman-daemon ./daemon
-    - echo "Compile complete."
-
-test-job:
-  stage: test
-  script:
-    - echo "Running tests..."
     - chmod a+x ./ifman-ctl ./ifman-daemon
     - ./ifman-ctl key
     - ./ifman-daemon -h
+
 
