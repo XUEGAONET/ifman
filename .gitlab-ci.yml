@@ -1,0 +1,15 @@
+stages:
+  - build
+
+build-job:
+  stage: build
+  script:
+    - dnf makecache
+    - dnf install golang -y
+    - go build -o ./ifman-ctl ./ctl
+    - go build -o ./ifman-daemon ./daemon
+    - chmod a+x ./ifman-ctl ./ifman-daemon
+    - ./ifman-ctl key
+    - ./ifman-daemon -h
+
+
