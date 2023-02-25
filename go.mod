@@ -14,7 +14,7 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/tebeka/strftime v0.1.5 // indirect
 	github.com/vishvananda/netlink v1.1.0
-	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
+	golang.org/x/sys v0.1.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210506160403-92e472f520a5
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
